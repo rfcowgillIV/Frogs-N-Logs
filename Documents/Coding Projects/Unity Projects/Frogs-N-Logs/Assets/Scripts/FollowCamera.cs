@@ -12,8 +12,10 @@ public class FollowCamera : MonoBehaviour {
 	private float cameraFollowSpeed = 5f;
 
 	
-	// Update is called once per frame
-	void Update () {
+	// BUG FIX (2026): LateUpdate instead of Update. LateUpdate runs after the
+	// frog has moved this frame, so the camera follows smoothly instead of
+	// lagging one frame behind and jittering. Lights, camera, smooth action!
+	void LateUpdate () {
 		Vector3 newPosition = player.position + offset;
 
 		transform.position = Vector3.Lerp (transform.position, newPosition, cameraFollowSpeed * Time.deltaTime);

@@ -17,6 +17,10 @@ public class DontDestroy : MonoBehaviour {
 		else if (instance != this) {
 			// ...then destroy this game object to enforce the singleton pattern.
 			Destroy (gameObject);
+
+			// BUG FIX (2026): stop here. The old code fell through and called
+			// DontDestroyOnLoad on the duplicate it had just destroyed.
+			return;
 		}
 
 		// When a new scene loads, don't destroy this game object.
