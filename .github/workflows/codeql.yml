@@ -1,0 +1,54 @@
+# CodeQL code scanning (added October 2026)
+#
+# GitHub's free security scanner rereads the code looking for common security
+# bugs (injection, unsafe data handling, etc.). It runs on every push and pull
+# request to master, plus once a week in case new checks get added.
+# Results appear in this repo's Security tab -> Code scanning.
+#
+# "build-mode: none" means it reads the source directly without compiling it,
+# so nothing about the project needs to be set up for it to work.
+# Code that checks code - it's scanners all the way down.
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  schedule:
+    - cron: "37 7 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: csharp
+            build-mode: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"

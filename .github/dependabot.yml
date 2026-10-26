@@ -1,0 +1,9 @@
+# Dependabot keeps this project's tools up to date (added October 2026).
+# Each week GitHub checks for newer versions and opens a pull request for each.
+version: 2
+updates:
+  # Keeps the GitHub Actions used by the CodeQL workflow up to date.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

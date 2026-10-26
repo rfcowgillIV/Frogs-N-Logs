@@ -69,3 +69,8 @@ Open the project in Unity and play:
 4. The Console should show no red errors.
 
 No Unity editor was available where these changes were made, so step 4 is the compile check.
+
+## Ongoing protection (added later in October 2026)
+
+- **`SECURITY.md`** tells people how to report a security problem privately instead of in a public issue. For the "Report a vulnerability" button to appear, turn on **Settings → Code security → Private vulnerability reporting**.
+- **CodeQL code scanning** (`.github/workflows/codeql.yml`): GitHub's free scanner checks the code for security bugs on every push and pull request to `master`, and weekly. Results appear under **Security → Code scanning**. Dependabot also keeps the workflow's own tools updated.
