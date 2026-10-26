@@ -19,3 +19,4 @@
 # OS clutter
 .DS_Store
 Thumbs.db
+.vscode/
