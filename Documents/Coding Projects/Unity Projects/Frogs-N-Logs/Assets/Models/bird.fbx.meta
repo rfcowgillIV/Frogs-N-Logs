@@ -1,127 +1,322 @@
 fileFormatVersion: 2
 guid: ff748971a9979b94eb582ff11822a70e
-timeCreated: 1434976990
-licenseType: Pro
 ModelImporter:
-  serializedVersion: 18
-  fileIDToRecycleName:
-    100000: //RootNode
-    100002: CL_polySurface2_SeamsColor
-    100004: group1
-    100006: joint1
-    100008: joint11
-    100010: joint13
-    100012: joint15
-    100014: joint16
-    100016: joint17
-    100018: joint18
-    100020: joint19
-    100022: joint20
-    100024: joint21
-    100026: joint22
-    100028: joint23
-    100030: joint24
-    100032: joint25
-    100034: joint26
-    100036: joint27
-    100038: joint28
-    100040: joint29
-    100042: joint3
-    100044: joint30
-    100046: joint31
-    100048: joint32
-    100050: joint33
-    100052: joint34
-    100054: joint35
-    100056: joint36
-    100058: joint37
-    100060: joint38
-    100062: joint39
-    100064: joint43
-    100066: joint44
-    100068: joint45
-    100070: joint49
-    100072: joint5
-    100074: joint50
-    100076: joint51
-    100078: joint52
-    100080: joint53
-    100082: joint54
-    100084: joint7
-    100086: joint9
-    400000: //RootNode
-    400002: CL_polySurface2_SeamsColor
-    400004: group1
-    400006: joint1
-    400008: joint11
-    400010: joint13
-    400012: joint15
-    400014: joint16
-    400016: joint17
-    400018: joint18
-    400020: joint19
-    400022: joint20
-    400024: joint21
-    400026: joint22
-    400028: joint23
-    400030: joint24
-    400032: joint25
-    400034: joint26
-    400036: joint27
-    400038: joint28
-    400040: joint29
-    400042: joint3
-    400044: joint30
-    400046: joint31
-    400048: joint32
-    400050: joint33
-    400052: joint34
-    400054: joint35
-    400056: joint36
-    400058: joint37
-    400060: joint38
-    400062: joint39
-    400064: joint43
-    400066: joint44
-    400068: joint45
-    400070: joint49
-    400072: joint5
-    400074: joint50
-    400076: joint51
-    400078: joint52
-    400080: joint53
-    400082: joint54
-    400084: joint7
-    400086: joint9
-    4300000: CL_polySurface2_SeamsColor
-    7400000: Idle
-    7400002: Attack
-    7400004: Walk
-    9500000: //RootNode
-    13700000: CL_polySurface2_SeamsColor
+  serializedVersion: 24300
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: //RootNode
+  - first:
+      1: 100002
+    second: CL_polySurface2_SeamsColor
+  - first:
+      1: 100004
+    second: group1
+  - first:
+      1: 100006
+    second: joint1
+  - first:
+      1: 100008
+    second: joint11
+  - first:
+      1: 100010
+    second: joint13
+  - first:
+      1: 100012
+    second: joint15
+  - first:
+      1: 100014
+    second: joint16
+  - first:
+      1: 100016
+    second: joint17
+  - first:
+      1: 100018
+    second: joint18
+  - first:
+      1: 100020
+    second: joint19
+  - first:
+      1: 100022
+    second: joint20
+  - first:
+      1: 100024
+    second: joint21
+  - first:
+      1: 100026
+    second: joint22
+  - first:
+      1: 100028
+    second: joint23
+  - first:
+      1: 100030
+    second: joint24
+  - first:
+      1: 100032
+    second: joint25
+  - first:
+      1: 100034
+    second: joint26
+  - first:
+      1: 100036
+    second: joint27
+  - first:
+      1: 100038
+    second: joint28
+  - first:
+      1: 100040
+    second: joint29
+  - first:
+      1: 100042
+    second: joint3
+  - first:
+      1: 100044
+    second: joint30
+  - first:
+      1: 100046
+    second: joint31
+  - first:
+      1: 100048
+    second: joint32
+  - first:
+      1: 100050
+    second: joint33
+  - first:
+      1: 100052
+    second: joint34
+  - first:
+      1: 100054
+    second: joint35
+  - first:
+      1: 100056
+    second: joint36
+  - first:
+      1: 100058
+    second: joint37
+  - first:
+      1: 100060
+    second: joint38
+  - first:
+      1: 100062
+    second: joint39
+  - first:
+      1: 100064
+    second: joint43
+  - first:
+      1: 100066
+    second: joint44
+  - first:
+      1: 100068
+    second: joint45
+  - first:
+      1: 100070
+    second: joint49
+  - first:
+      1: 100072
+    second: joint5
+  - first:
+      1: 100074
+    second: joint50
+  - first:
+      1: 100076
+    second: joint51
+  - first:
+      1: 100078
+    second: joint52
+  - first:
+      1: 100080
+    second: joint53
+  - first:
+      1: 100082
+    second: joint54
+  - first:
+      1: 100084
+    second: joint7
+  - first:
+      1: 100086
+    second: joint9
+  - first:
+      4: 400000
+    second: //RootNode
+  - first:
+      4: 400002
+    second: CL_polySurface2_SeamsColor
+  - first:
+      4: 400004
+    second: group1
+  - first:
+      4: 400006
+    second: joint1
+  - first:
+      4: 400008
+    second: joint11
+  - first:
+      4: 400010
+    second: joint13
+  - first:
+      4: 400012
+    second: joint15
+  - first:
+      4: 400014
+    second: joint16
+  - first:
+      4: 400016
+    second: joint17
+  - first:
+      4: 400018
+    second: joint18
+  - first:
+      4: 400020
+    second: joint19
+  - first:
+      4: 400022
+    second: joint20
+  - first:
+      4: 400024
+    second: joint21
+  - first:
+      4: 400026
+    second: joint22
+  - first:
+      4: 400028
+    second: joint23
+  - first:
+      4: 400030
+    second: joint24
+  - first:
+      4: 400032
+    second: joint25
+  - first:
+      4: 400034
+    second: joint26
+  - first:
+      4: 400036
+    second: joint27
+  - first:
+      4: 400038
+    second: joint28
+  - first:
+      4: 400040
+    second: joint29
+  - first:
+      4: 400042
+    second: joint3
+  - first:
+      4: 400044
+    second: joint30
+  - first:
+      4: 400046
+    second: joint31
+  - first:
+      4: 400048
+    second: joint32
+  - first:
+      4: 400050
+    second: joint33
+  - first:
+      4: 400052
+    second: joint34
+  - first:
+      4: 400054
+    second: joint35
+  - first:
+      4: 400056
+    second: joint36
+  - first:
+      4: 400058
+    second: joint37
+  - first:
+      4: 400060
+    second: joint38
+  - first:
+      4: 400062
+    second: joint39
+  - first:
+      4: 400064
+    second: joint43
+  - first:
+      4: 400066
+    second: joint44
+  - first:
+      4: 400068
+    second: joint45
+  - first:
+      4: 400070
+    second: joint49
+  - first:
+      4: 400072
+    second: joint5
+  - first:
+      4: 400074
+    second: joint50
+  - first:
+      4: 400076
+    second: joint51
+  - first:
+      4: 400078
+    second: joint52
+  - first:
+      4: 400080
+    second: joint53
+  - first:
+      4: 400082
+    second: joint54
+  - first:
+      4: 400084
+    second: joint7
+  - first:
+      4: 400086
+    second: joint9
+  - first:
+      43: 4300000
+    second: CL_polySurface2_SeamsColor
+  - first:
+      74: 7400000
+    second: Idle
+  - first:
+      74: 7400002
+    second: Attack
+  - first:
+      74: 7400004
+    second: Walk
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: CL_polySurface2_SeamsColor
+  externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
+    materialLocation: 0
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
+    resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
     animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
     animationCompression: 1
-    animationRotationError: .5
-    animationPositionError: .5
-    animationScaleError: .5
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
     animationWrapMode: 0
     extraExposedTransformPaths: []
+    extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
       name: Idle
       takeName: Take 001
+      internalID: 0
       firstFrame: 112
       lastFrame: 178
       wrapMode: 0
@@ -129,6 +324,7 @@ ModelImporter:
       level: 0
       cycleOffset: 0
       loop: 0
+      hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 1
       loopBlendOrientation: 0
@@ -233,9 +429,11 @@ ModelImporter:
         weight: 1
       maskType: 0
       maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: Attack
       takeName: Take 001
+      internalID: 0
       firstFrame: 51
       lastFrame: 83
       wrapMode: 0
@@ -243,6 +441,7 @@ ModelImporter:
       level: 0
       cycleOffset: 0
       loop: 0
+      hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 1
       loopBlendOrientation: 0
@@ -347,9 +546,11 @@ ModelImporter:
         weight: 1
       maskType: 0
       maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     - serializedVersion: 16
       name: Walk
       takeName: Take 001
+      internalID: 0
       firstFrame: 12
       lastFrame: 46
       wrapMode: 0
@@ -357,6 +558,7 @@ ModelImporter:
       level: 0
       cycleOffset: 0
       loop: 0
+      hasAdditiveReferencePose: 0
       loopTime: 1
       loopBlend: 1
       loopBlendOrientation: 0
@@ -461,44 +663,81 @@ ModelImporter:
         weight: 1
       maskType: 0
       maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     isReadable: 1
   meshes:
     lODScreenPercentages: []
     globalScale: 10
     meshCompression: 0
     addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 0
+    importVisibility: 0
     importBlendShapes: 1
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
-    splitTangentsAcrossUV: 1
     normalImportMode: 0
-    tangentImportMode: 1
+    tangentImportMode: 4
+    normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 0
   humanDescription:
+    serializedVersion: 3
     human: []
     skeleton: []
-    armTwist: .5
-    foreArmTwist: .5
-    upperLegTwist: .5
-    legTwist: .5
-    armStretch: .0500000007
-    legStretch: .0500000007
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
     feetSpacing: 0
+    globalScale: 10
     rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 0
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 
