@@ -73,11 +73,21 @@ jobs:
           lic = os.environ["UNITY_LICENSE"]
           m = re.search(r'<DeveloperData Value="([^"]+)"', lic)
           if not m:
-              sys.exit("License file has no DeveloperData entry")
+              # Describe the file's SHAPE only (never its contents) so we can tell what was pasted.
+              tags = sorted(set(re.findall(r"<\s*([A-Za-z][\w:.-]*)", lic)))
+              lines = lic.strip().splitlines()
+              first = re.sub(r'>[^<]+', '>…', re.sub(r'"[^"]*"', '"…"', lines[0]))[:80] if lines else "(empty)"
+              info = (f"chars={len(lic)} lines={len(lines)} first_line={first} "
+                      f"xml_tags={', '.join(tags[:40]) or 'none'}")
+              print(f"FORMAT-ERROR {info}")
+              sys.exit(0)
           print(base64.b64decode(m.group(1)).decode("latin-1")[4:])
           PY
           )
-          if [ -z "$serial" ]; then echo "::error::Could not read a serial from UNITY_LICENSE"; exit 1; fi
+          case "$serial" in
+            FORMAT-ERROR*) echo "::error title=License format::No DeveloperData entry in UNITY_LICENSE. ${serial#FORMAT-ERROR }"; exit 1 ;;
+            "") echo "::error::Could not read a serial from UNITY_LICENSE"; exit 1 ;;
+          esac
           echo "::add-mask::$serial"
           echo "UNITY_SERIAL=$serial" >> "$GITHUB_ENV"
 
