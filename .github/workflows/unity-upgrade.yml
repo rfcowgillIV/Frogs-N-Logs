@@ -104,6 +104,7 @@ jobs:
             -e UNITY_SERIAL -e UNITY_EMAIL -e UNITY_PASSWORD -e UNITY_LICENSE \
             -e PROJECT_PATH -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
             -e FROGS_BUILD_PATH="/work/unity-build/FrogsNLogs.x86_64" \
+            -e FROGS_SCREENSHOT_DIR="/work/playtest-screenshots" \
             -v "$GITHUB_WORKSPACE":/work -w /work \
             "${{ steps.version.outputs.image }}" \
             bash -c '
@@ -136,6 +137,19 @@ jobs:
                 -logFile /work/unity-logs/upgrade.log
               up=$?
               echo "upgrade exit code: $up"
+              pt=97
+              if [ $up -eq 0 ]; then
+                echo "== Play testing the level"
+                unity-editor -batchmode -accept-apiupdate \
+                  -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath "/work/$PROJECT_PATH" \
+                  -runTests -testPlatform PlayMode \
+                  -testResults /work/unity-logs/playtest.xml \
+                  -logFile /work/unity-logs/playtest.log
+                pt=$?
+                echo "play test exit code: $pt"
+              fi
+              echo "$pt" > /work/unity-logs/playtest.code
               echo "== Returning license"
               unity-editor -batchmode -nographics -quit -returnlicense \
                 -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
@@ -195,3 +209,54 @@ jobs:
             echo "### Unity ${{ steps.version.outputs.version }} upgrade succeeded"
             grep "\[FrogsUpgrade\]" unity-logs/upgrade.log | sed 's/^/- /'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Play test results
+        if: always() && steps.unity.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          path = "unity-logs/playtest.xml"
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+          if not os.path.exists(path):
+              tail = ""
+              if os.path.exists("unity-logs/playtest.log"):
+                  lines = [l for l in open("unity-logs/playtest.log", errors="replace").read().splitlines() if l.strip()]
+                  tail = "%0A".join(lines[-60:]).replace("::", ": :")
+              print("::error title=Play test produced no results::" + tail[:60000])
+              raise SystemExit(1)
+          root = ET.parse(path).getroot()
+          cases = root.iter("test-case")
+          failed = 0
+          summary.write("### Automated play test\n\n| Test | Result | Time |\n|---|---|---|\n")
+          for c in cases:
+              name, result = c.get("name"), c.get("result")
+              dur = float(c.get("duration") or 0)
+              out = (c.findtext("output") or "").strip()
+              notes = "%0A".join(l for l in out.splitlines() if "[Playtest]" in l)
+              summary.write(f"| {name} | {result} | {dur:.1f}s |\n")
+              if result == "Passed":
+                  print(f"::notice title={name} passed::{notes or 'ok'}")
+              else:
+                  failed += 1
+                  msg = (c.findtext("failure/message") or "").strip().replace("%", "%25").replace("\n", "%0A")
+                  print(f"::error title={name} {result}::{msg}%0A{notes}"[:60000])
+          raise SystemExit(1 if failed else 0)
+          PY
+
+      # Screenshots go to the "playtest-screenshots" branch so they can be viewed on GitHub.
+      - name: Save play test screenshots
+        if: always() && hashFiles('playtest-screenshots/*.png') != ''
+        run: |
+          src="$GITHUB_WORKSPACE/playtest-screenshots"
+          tmp=$(mktemp -d)
+          cd "$tmp"
+          git init -q -b playtest-screenshots
+          cp "$src"/*.png .
+          printf '# Play test screenshots\n\nFrom run %s on %s (commit %s).\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_REF_NAME" "${GITHUB_SHA:0:7}" > README.md
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Play test screenshots from run $GITHUB_RUN_ID"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
+            HEAD:playtest-screenshots
+          ls -1 *.png

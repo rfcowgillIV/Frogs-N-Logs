@@ -44,6 +44,20 @@ also run it from **Tools → Frogs-N-Logs → Upgrade And Build**.
 to `master`, so every new feature or level is checked automatically. It uses the
 `UNITY_LICENSE`, `UNITY_EMAIL` and `UNITY_PASSWORD` secrets and returns the license seat when done.
 
+### New: automated play test (`Assets/Tests/PlayMode/FrogsPlayTests.cs`)
+On every build, Unity loads the real level and plays it by itself:
+1. **Level loads** with one frog, one bird, at least 12 flies, a score of "0 Flies", and nothing
+   moving until the game starts.
+2. **Starting the game** turns on the frog's controls, and the bird starts chasing (moves at least
+   0.5 m in 2 seconds, which checks the 2017 pathfinding data still works).
+3. **Eating a fly** scores exactly 1, removes the fly, and a new one spawns.
+4. **The bird catches the frog** on its own (within 30 seconds), "Game Over!" shows, and the level
+   restarts 3 seconds later with the score back at 0.
+
+Any error logged during play fails the test. Screenshots are saved to the
+`playtest-screenshots` branch on GitHub. You can also run the tests yourself in Unity:
+**Window → General → Test Runner → PlayMode → Run All**.
+
 ## Please check when you play
 - **The bird.** `Assets/Prefabs/Bird.prefab` is the one prefab Unity didn't re-save in the new
   format, which can mean it couldn't fully load it. The level still built. If the bird looks or
