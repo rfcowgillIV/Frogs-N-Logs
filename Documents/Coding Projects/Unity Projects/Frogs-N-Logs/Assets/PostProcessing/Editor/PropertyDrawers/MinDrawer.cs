@@ -3,6 +3,11 @@ using UnityEngine.PostProcessing;
 
 namespace UnityEditor.PostProcessing
 {
+    // 2026 fix: Unity 6 added its own UnityEngine.MinAttribute, which clashes with this
+    // package's attribute of the same name. This alias picks the post-processing one.
+    // Minimum effort, maximum attribute.
+    using MinAttribute = UnityEngine.PostProcessing.MinAttribute;
+
     [CustomPropertyDrawer(typeof(MinAttribute))]
     sealed class MinDrawer : PropertyDrawer
     {
