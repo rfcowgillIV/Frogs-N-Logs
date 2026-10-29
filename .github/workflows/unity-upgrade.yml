@@ -63,71 +63,81 @@ jobs:
       - name: Pull Unity image
         run: docker pull "${{ steps.version.outputs.image }}"
 
-      - name: Read serial from license file
+      - name: Read serial from license file (if it has one)
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         run: |
           if [ -z "$UNITY_LICENSE" ]; then echo "::error::UNITY_LICENSE secret is empty"; exit 1; fi
+          # Paid licenses carry a serial in <DeveloperData>; Personal licenses usually leave it
+          # empty and are activated with email + password instead. Only "found/empty" is logged.
           serial=$(python3 - <<'PY'
-          import base64, os, re, sys
-          lic = os.environ["UNITY_LICENSE"]
-          m = re.search(r'<DeveloperData Value="([^"]+)"', lic)
-          if not m:
-              # Describe the file's SHAPE only (never its contents) so we can tell what was pasted.
-              tags = sorted(set(re.findall(r"<\s*([A-Za-z][\w:.-]*)", lic)))
-              lines = lic.strip().splitlines()
-              first = re.sub(r'>[^<]+', '>…', re.sub(r'"[^"]*"', '"…"', lines[0]))[:80] if lines else "(empty)"
-              info = (f"chars={len(lic)} lines={len(lines)} first_line={first} "
-                      f"xml_tags={', '.join(tags[:40]) or 'none'}")
-              print(f"FORMAT-ERROR {info}")
-              sys.exit(0)
-          print(base64.b64decode(m.group(1)).decode("latin-1")[4:])
+          import base64, binascii, os, re
+          m = re.search(r'<DeveloperData\s+Value\s*=\s*"([^"]*)"', os.environ["UNITY_LICENSE"])
+          raw = re.sub(r"\s+", "", m.group(1)) if m else ""
+          try:
+              print(base64.b64decode(raw).decode("latin-1")[4:].strip() if raw else "")
+          except (binascii.Error, ValueError):
+              print("")
           PY
           )
-          case "$serial" in
-            FORMAT-ERROR*) echo "::error title=License format::No DeveloperData entry in UNITY_LICENSE. ${serial#FORMAT-ERROR }"; exit 1 ;;
-            "") echo "::error::Could not read a serial from UNITY_LICENSE"; exit 1 ;;
-          esac
-          echo "::add-mask::$serial"
-          echo "UNITY_SERIAL=$serial" >> "$GITHUB_ENV"
+          if [ -n "$serial" ]; then
+            echo "::add-mask::$serial"
+            echo "UNITY_SERIAL=$serial" >> "$GITHUB_ENV"
+            echo "Serial found in license file - will use serial activation first."
+          else
+            echo "No serial in license file (normal for Personal) - will sign in with email + password."
+          fi
 
       - name: Upgrade and build with Unity ${{ steps.version.outputs.version }}
         id: unity
         env:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         run: |
           mkdir -p unity-logs
           set +e
           docker run --rm \
-            -e UNITY_SERIAL -e UNITY_EMAIL -e UNITY_PASSWORD \
+            -e UNITY_SERIAL -e UNITY_EMAIL -e UNITY_PASSWORD -e UNITY_LICENSE \
             -e PROJECT_PATH -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
             -e FROGS_BUILD_PATH="/work/unity-build/FrogsNLogs.x86_64" \
             -v "$GITHUB_WORKSPACE":/work -w /work \
             "${{ steps.version.outputs.image }}" \
             bash -c '
-              mkdir -p /BlankProject/Assets
-              echo "== Activating license"
-              unity-editor -batchmode -nographics -quit \
-                -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
-                -projectPath /BlankProject -logFile /work/unity-logs/activate.log
-              act=$?
-              echo "activation exit code: $act"
-              if [ $act -eq 0 ]; then
-                echo "== Upgrading project and building"
-                unity-editor -batchmode -nographics -accept-apiupdate \
-                  -projectPath "/work/$PROJECT_PATH" \
-                  -executeMethod FrogsNLogs.EditorTools.UpgradeAndBuild.Run \
-                  -logFile /work/unity-logs/upgrade.log
-                up=$?
-                echo "upgrade exit code: $up"
-              else
-                up=99
+              mkdir -p /BlankProject/Assets /root/.local/share/unity3d/Unity
+              # Also drop the license file where Unity on Linux looks for it.
+              printf "%s" "$UNITY_LICENSE" > /root/.local/share/unity3d/Unity/Unity_lic.ulf
+              act=1
+              if [ -n "$UNITY_SERIAL" ]; then
+                echo "== Activating (serial)"
+                unity-editor -batchmode -nographics -quit \
+                  -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath /BlankProject -logFile /work/unity-logs/activate.log
+                act=$?
               fi
+              if [ $act -ne 0 ]; then
+                echo "== Activating (Personal: email + password)"
+                unity-editor -batchmode -nographics -quit \
+                  -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath /BlankProject -logFile /work/unity-logs/activate-personal.log
+                act=$?
+              fi
+              echo "activation exit code: $act"
+              # Try the upgrade even if activation reported an error: the license file
+              # alone may be enough, and its log tells us exactly what Unity thinks.
+              echo "== Upgrading project and building"
+              unity-editor -batchmode -nographics -accept-apiupdate \
+                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                -projectPath "/work/$PROJECT_PATH" \
+                -executeMethod FrogsNLogs.EditorTools.UpgradeAndBuild.Run \
+                -logFile /work/unity-logs/upgrade.log
+              up=$?
+              echo "upgrade exit code: $up"
               echo "== Returning license"
               unity-editor -batchmode -nographics -quit -returnlicense \
                 -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
                 -logFile /work/unity-logs/return.log
+              rm -f /root/.local/share/unity3d/Unity/Unity_lic.ulf
               chown -R "$HOST_UID:$HOST_GID" /work
               echo "$act" > /work/unity-logs/activate.code
               echo "$up" > /work/unity-logs/upgrade.code
@@ -136,7 +146,7 @@ jobs:
           up=$(cat unity-logs/upgrade.code 2>/dev/null || echo 98)
           echo "activate=$act" >> "$GITHUB_OUTPUT"
           echo "upgrade=$up" >> "$GITHUB_OUTPUT"
-          [ "$act" = "0" ] && [ "$up" = "0" ]
+          [ "$up" = "0" ]
 
       # Turns Unity's log into readable error annotations on the run page.
       - name: Report problems
@@ -147,13 +157,14 @@ jobs:
             msg=$(head -c 60000 "$2" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
             echo "::error title=$1::$msg"
           }
-          if [ -f unity-logs/activate.log ] && [ "${{ steps.unity.outputs.activate }}" != "0" ]; then
-            grep -iE "licens|serial|login|credential|error|fail|entitle" unity-logs/activate.log \
+          if [ "${{ steps.unity.outputs.activate }}" != "0" ]; then
+            cat unity-logs/activate*.log 2>/dev/null \
+              | grep -iE "licens|serial|login|credential|entitle|token|error|fail" \
               | grep -v "^\s*$" | tail -60 > act.txt
-            annotate "License activation failed" act.txt
+            annotate "License activation problems" act.txt
           fi
           if [ -f unity-logs/upgrade.log ]; then
-            grep -E "error CS[0-9]+|Scripts have compiler errors|\[FrogsUpgrade\]|Error building|BuildFailedException|Exception:|executeMethod class|Aborting batchmode|Failed to|Build Finished, Result" \
+            grep -E "error CS[0-9]+|Scripts have compiler errors|\[FrogsUpgrade\]|Error building|BuildFailedException|Exception:|executeMethod class|Aborting batchmode|Failed to|Build Finished, Result|[Ll]icens|[Ee]ntitlement" \
               unity-logs/upgrade.log | sort -u | head -150 > up.txt
             annotate "Upgrade/build problems" up.txt
             tail -80 unity-logs/upgrade.log | grep -v "^\s*$" > tail.txt
