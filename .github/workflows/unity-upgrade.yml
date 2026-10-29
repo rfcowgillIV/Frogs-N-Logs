@@ -1,6 +1,7 @@
 # Unity upgrade & build (added October 2026)
 #
-# Runs on every push to the "unity6-upgrade" branch:
+# Runs on pushes and pull requests to master (so every new feature or level gets a real
+# Unity build check), and on the "unity6-upgrade" branch, where it also commits upgraded files:
 #   1. picks the newest Unity 6.3 LTS editor available as a GameCI Docker image
 #   2. activates Unity with the UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD secrets
 #      (same method GameCI uses: the serial comes from your license file)
@@ -16,13 +17,15 @@ name: Unity upgrade & build
 
 on:
   push:
-    branches: [ "unity6-upgrade" ]
+    branches: [ "master", "unity6-upgrade" ]
+  pull_request:
+    branches: [ "master" ]
 
 permissions:
   contents: write
 
 concurrency:
-  group: unity-upgrade
+  group: unity-upgrade-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -172,7 +175,8 @@ jobs:
           fi
 
       - name: Commit upgraded project
-        if: success()
+        # Only the upgrade branch commits re-saved files; everywhere else this is a build check.
+        if: success() && github.ref == 'refs/heads/unity6-upgrade' 
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
