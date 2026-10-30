@@ -102,7 +102,9 @@ namespace FrogsNLogs.Tests
 
         private static IEnumerator Screenshot(string name)
         {
-            yield return new WaitForEndOfFrame();
+            // Note: not WaitForEndOfFrame - in batch mode (no screen) it never fires and the
+            // test would hang forever. The camera is rendered manually below instead.
+            yield return null;
             try
             {
                 string dir = Environment.GetEnvironmentVariable("FROGS_SCREENSHOT_DIR");
@@ -140,7 +142,7 @@ namespace FrogsNLogs.Tests
 
         // ---------- tests (run in name order) ----------
 
-        [UnityTest]
+        [UnityTest, Timeout(60000)]
         public IEnumerator T1_LevelLoadsWithEverythingInIt()
         {
             yield return LoadLevel();
@@ -164,7 +166,7 @@ namespace FrogsNLogs.Tests
             yield return Screenshot("01-level-loaded");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(60000)]
         public IEnumerator T2_StartingTheGameWakesFrogAndBird()
         {
             yield return LoadLevel();
@@ -184,7 +186,7 @@ namespace FrogsNLogs.Tests
             yield return Screenshot("02-game-running");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(60000)]
         public IEnumerator T3_EatingAFlyScoresOnePoint()
         {
             yield return LoadLevel();
@@ -207,7 +209,7 @@ namespace FrogsNLogs.Tests
             yield return Screenshot("03-ate-a-fly");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(120000)]
         public IEnumerator T4_BirdCatchesFrogThenLevelRestarts()
         {
             yield return LoadLevel();

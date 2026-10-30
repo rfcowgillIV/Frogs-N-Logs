@@ -24,8 +24,10 @@ on:
 permissions:
   contents: write
 
+# One Unity run at a time across the whole repo, so two runs never fight over the
+# same Personal license seat (they queue instead).
 concurrency:
-  group: unity-upgrade-${{ github.ref }}
+  group: unity-license
   cancel-in-progress: false
 
 env:
@@ -130,7 +132,7 @@ jobs:
               # Try the upgrade even if activation reported an error: the license file
               # alone may be enough, and its log tells us exactly what Unity thinks.
               echo "== Upgrading project and building"
-              unity-editor -batchmode -nographics -accept-apiupdate \
+              timeout --signal=KILL 2400 unity-editor -batchmode -nographics -accept-apiupdate \
                 -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
                 -projectPath "/work/$PROJECT_PATH" \
                 -executeMethod FrogsNLogs.EditorTools.UpgradeAndBuild.Run \
@@ -140,7 +142,8 @@ jobs:
               pt=97
               if [ $up -eq 0 ]; then
                 echo "== Play testing the level"
-                unity-editor -batchmode -accept-apiupdate \
+                # Hard 20-minute cap so a stuck test can never hang the whole run.
+                timeout --signal=KILL 1200 unity-editor -batchmode -accept-apiupdate \
                   -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
                   -projectPath "/work/$PROJECT_PATH" \
                   -runTests -testPlatform PlayMode \
@@ -148,6 +151,7 @@ jobs:
                   -logFile /work/unity-logs/playtest.log
                 pt=$?
                 echo "play test exit code: $pt"
+                [ $pt -eq 137 ] && echo "PLAY TEST TIMED OUT after 20 minutes" | tee -a /work/unity-logs/playtest.log
               fi
               echo "$pt" > /work/unity-logs/playtest.code
               echo "== Returning license"
