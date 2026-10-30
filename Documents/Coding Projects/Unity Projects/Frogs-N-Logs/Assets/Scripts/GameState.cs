@@ -29,7 +29,14 @@ public class GameState : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		Cursor.visible = false;
+		// 2026: the cursor stays visible now, because the mouse can steer the frog.
+		// (It used to be hidden for the keyboard-only version.)
+		Cursor.visible = true;
+
+		// 2026: tapping/clicking also starts the game, so say so on the title text.
+		if (gameStateText != null) {
+			gameStateText.text = "Tap or Space to Start";
+		}
 
 		playerMovement = player.GetComponent<PlayerMovement> ();
 		playerHealth = player.GetComponent<PlayerHealth> ();
@@ -47,7 +54,8 @@ public class GameState : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		//if the game has not started and the player presses the space bar...
-		if (gameStarted == false && gameOver == false && Input.GetKeyUp (KeyCode.Space)) {
+		// (2026: a tap or mouse click works too - see PointerInput.cs)
+		if (gameStarted == false && gameOver == false && (Input.GetKeyUp (KeyCode.Space) || PointerInput.WasTapped)) {
 			//... then start the game.
 			StartGame();
 		}

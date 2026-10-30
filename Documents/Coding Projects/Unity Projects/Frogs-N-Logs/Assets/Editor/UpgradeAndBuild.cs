@@ -36,6 +36,73 @@ namespace FrogsNLogs.EditorTools
             Execute(exitWhenDone: true);
         }
 
+        // Web (WebGL) build, used by the "web" job in .github/workflows/unity-upgrade.yml (added 2026).
+        // Output goes to FROGS_WEB_PATH (default Build/Web). Gzip + "decompression fallback"
+        // lets it run from any plain web host, including GitHub Pages, with no server setup.
+        // Ribbit-ing the web, one browser at a time.
+        [MenuItem("Tools/Frogs-N-Logs/Build Web Version")]
+        public static void BuildWebGLFromMenu()
+        {
+            BuildWebGLInternal(exitWhenDone: false);
+        }
+
+        public static void BuildWebGL()
+        {
+            BuildWebGLInternal(exitWhenDone: true);
+        }
+
+        private static void BuildWebGLInternal(bool exitWhenDone)
+        {
+            int exitCode;
+            try
+            {
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+                PlayerSettings.WebGL.decompressionFallback = true;
+                PlayerSettings.WebGL.dataCaching = true;
+                PlayerSettings.productName = "Frogs-N-Logs";
+
+                string[] scenes = EditorBuildSettings.scenes
+                    .Where(s => s.enabled && !string.IsNullOrEmpty(s.path))
+                    .Select(s => s.path)
+                    .ToArray();
+                if (scenes.Length == 0)
+                {
+                    scenes = new[] { FallbackScene };
+                }
+
+                string outputPath = Environment.GetEnvironmentVariable("FROGS_WEB_PATH");
+                if (string.IsNullOrEmpty(outputPath))
+                {
+                    outputPath = "Build/Web";
+                }
+
+                Debug.Log("[FrogsWeb] Building WebGL -> " + outputPath);
+                BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = scenes,
+                    locationPathName = outputPath,
+                    target = BuildTarget.WebGL,
+                    options = BuildOptions.None
+                });
+
+                BuildSummary summary = report.summary;
+                Debug.Log("[FrogsWeb] Build result: " + summary.result
+                          + " | errors: " + summary.totalErrors
+                          + " | size: " + summary.totalSize + " bytes");
+                exitCode = summary.result == BuildResult.Succeeded ? 0 : 2;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[FrogsWeb] Web build failed: " + e);
+                exitCode = 3;
+            }
+
+            if (exitWhenDone)
+            {
+                EditorApplication.Exit(exitCode);
+            }
+        }
+
         private static void Execute(bool exitWhenDone)
         {
             int exitCode;

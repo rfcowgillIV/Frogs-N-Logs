@@ -1,5 +1,8 @@
 # Unity upgrade & build (added October 2026)
 #
+# One job, one Unity session: build the game, run the automated play tests, and if they pass,
+# build the web browser version and publish it to GitHub Pages.
+#
 # Runs on pushes and pull requests to master (so every new feature or level gets a real
 # Unity build check), and on the "unity6-upgrade" branch, where it also commits upgraded files:
 #   1. picks the newest Unity 6.3 LTS editor available as a GameCI Docker image
@@ -55,15 +58,16 @@ jobs:
         run: |
           url="https://hub.docker.com/v2/repositories/unityci/editor/tags?page_size=100&name=${UNITY_STREAM}"
           tags=$(curl -fsSL "$url" | jq -r '.results[].name')
-          version=$(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-base-3$" \
-                    | sed -E 's/^ubuntu-(.*)-base-3$/\1/' | sort -V | tail -1)
+          # The "webgl" image = the normal editor + web support, so one job can test AND build web.
+          version=$(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-webgl-3$" \
+                    | sed -E 's/^ubuntu-(.*)-webgl-3$/\1/' | sort -V | tail -1)
           if [ -z "$version" ]; then
             echo "::error::No unityci/editor image found for Unity ${UNITY_STREAM}"
             exit 1
           fi
           echo "Using Unity $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "image=unityci/editor:ubuntu-${version}-base-3" >> "$GITHUB_OUTPUT"
+          echo "image=unityci/editor:ubuntu-${version}-webgl-3" >> "$GITHUB_OUTPUT"
 
       - name: Pull Unity image
         run: docker pull "${{ steps.version.outputs.image }}"
@@ -107,6 +111,7 @@ jobs:
             -e PROJECT_PATH -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
             -e FROGS_BUILD_PATH="/work/unity-build/FrogsNLogs.x86_64" \
             -e FROGS_SCREENSHOT_DIR="/work/playtest-screenshots" \
+            -e FROGS_WEB_PATH="/work/web-build" \
             -v "$GITHUB_WORKSPACE":/work -w /work \
             "${{ steps.version.outputs.image }}" \
             bash -c '
@@ -154,6 +159,17 @@ jobs:
                 [ $pt -eq 137 ] && echo "PLAY TEST TIMED OUT after 20 minutes" | tee -a /work/unity-logs/playtest.log
               fi
               echo "$pt" > /work/unity-logs/playtest.code
+              # Web version: only once the build and play tests passed, in this same session.
+              if [ $pt -eq 0 ]; then
+                echo "== Building the web version"
+                timeout --signal=KILL 3000 unity-editor -batchmode -nographics \
+                  -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath "/work/$PROJECT_PATH" \
+                  -executeMethod FrogsNLogs.EditorTools.UpgradeAndBuild.BuildWebGL \
+                  -logFile /work/unity-logs/web.log
+                echo "$?" > /work/unity-logs/web.code
+                echo "web build exit code: $(cat /work/unity-logs/web.code)"
+              fi
               echo "== Returning license"
               unity-editor -batchmode -nographics -quit -returnlicense \
                 -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
@@ -264,3 +280,40 @@ jobs:
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
             HEAD:playtest-screenshots
           ls -1 *.png
+
+      - name: Web build results
+        if: always() && steps.unity.outcome == 'success' && hashFiles('unity-logs/web.code') != ''
+        run: |
+          code=$(cat unity-logs/web.code)
+          if [ "$code" = "0" ] && [ -f web-build/index.html ]; then
+            du -sh web-build; ls web-build web-build/Build
+            exit 0
+          fi
+          grep -E "error CS[0-9]+|\[FrogsWeb\]|Error building|Exception|Failed to|licens|Build Finished|BuildFailedException|emcc|wasm" \
+            unity-logs/web.log 2>/dev/null | sort -u | head -100 > problems.txt
+          tail -60 unity-logs/web.log 2>/dev/null | grep -v "^\s*$" | grep -v memorysetup >> problems.txt
+          msg=$(head -c 60000 problems.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Web build failed (exit $code)::$msg"
+          exit 1
+
+      # Publishes the web version to the gh-pages branch, which GitHub Pages serves at
+      # https://rfcowgilliv.github.io/Frogs-N-Logs/  (one-time setup: Settings -> Pages ->
+      # Deploy from a branch -> gh-pages / root). Runs for master and for pull requests
+      # (so a PR can be tried on a phone or iPad before merging).
+      - name: Publish web version to GitHub Pages
+        if: success() && hashFiles('web-build/index.html') != '' && github.ref != 'refs/heads/unity6-upgrade'
+        run: |
+          site=$(mktemp -d)
+          cp -r web-build/. "$site/"
+          python3 .github/scripts/web-fullscreen.py "$site/index.html"   # fill any screen, no scroll on drag
+          touch "$site/.nojekyll"
+          cd "$site"
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Web build from ${GITHUB_HEAD_REF:-$GITHUB_REF_NAME} @ ${GITHUB_SHA:0:7} (Unity ${{ steps.version.outputs.version }})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:gh-pages
+          {
+            echo "### Web version published"
+            echo "Play it at https://rfcowgilliv.github.io/Frogs-N-Logs/ (once Pages is set to the gh-pages branch)."
+          } >> "$GITHUB_STEP_SUMMARY"

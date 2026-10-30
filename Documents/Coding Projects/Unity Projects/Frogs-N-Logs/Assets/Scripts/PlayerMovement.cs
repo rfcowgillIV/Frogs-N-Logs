@@ -31,6 +31,12 @@ public class PlayerMovement : MonoBehaviour {
 
 
 		movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
+
+		// 2026: touch & mouse controls. If no key is pressed, hop toward the finger/mouse
+		// while it's held down (see PointerInput.cs). Keyboard always wins if both are used.
+		if (movement == Vector3.zero) {
+			movement = PointerInput.WorldDirectionTowardPointer (Camera.main, transform.position);
+		}
 	}
 
 	void FixedUpdate () {

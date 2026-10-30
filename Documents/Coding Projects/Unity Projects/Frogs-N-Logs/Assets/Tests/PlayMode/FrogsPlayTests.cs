@@ -156,6 +156,34 @@ namespace FrogsNLogs.Tests
                 "The level is in the build list but unchecked");
         }
 
+        // Touch/mouse steering math (PointerInput.ScreenToGroundDirection). Real touches can't
+        // be faked on the build server, so this checks the part that turns "where the finger
+        // is" into "which way the frog hops".
+        private static Vector3 Steer(Vector2 frog, Vector2 finger, Vector3 camRight, Vector3 camForward)
+        {
+            MethodInfo m = GameType("PointerInput").GetMethod("ScreenToGroundDirection", BindingFlags.Public | BindingFlags.Static);
+            return (Vector3)m.Invoke(null, new object[] { frog, finger, 40f, camRight, camForward });
+        }
+
+        [Test]
+        public void T0_TouchSteeringPointsTheFrogTheRightWay()
+        {
+            Vector3 right = Vector3.right;
+            Vector3 tilted = new Vector3(0f, -0.7f, 0.7f);   // camera looking down at an angle
+            Vector2 frog = new Vector2(500, 400);
+
+            Assert.That(Vector3.Distance(Steer(frog, new Vector2(800, 400), right, tilted), Vector3.right), Is.LessThan(0.01f), "Finger to the right -> hop right");
+            Assert.That(Vector3.Distance(Steer(frog, new Vector2(200, 400), right, tilted), Vector3.left), Is.LessThan(0.01f), "Finger to the left -> hop left");
+            Assert.That(Vector3.Distance(Steer(frog, new Vector2(500, 700), right, tilted), Vector3.forward), Is.LessThan(0.01f), "Finger up the screen -> hop away from camera");
+            Assert.That(Vector3.Distance(Steer(frog, new Vector2(500, 100), right, tilted), Vector3.back), Is.LessThan(0.01f), "Finger down the screen -> hop toward camera");
+            Assert.AreEqual(Vector3.zero, Steer(frog, new Vector2(510, 410), right, tilted), "Finger on the frog -> stay put");
+            Assert.That(Vector3.Distance(Steer(frog, new Vector2(500, 700), right, Vector3.down), Vector3.forward), Is.LessThan(0.01f), "Straight-down camera still works");
+
+            Vector3 diag = Steer(frog, new Vector2(800, 700), right, tilted);
+            Assert.That(diag.magnitude, Is.EqualTo(1f).Within(0.01f), "Direction is always full speed");
+            Assert.That(diag.y, Is.EqualTo(0f).Within(0.0001f), "Frog never steers into the sky");
+        }
+
         [UnityTest, Timeout(60000)]
         public IEnumerator T1_LevelLoadsWithEverythingInIt()
         {
