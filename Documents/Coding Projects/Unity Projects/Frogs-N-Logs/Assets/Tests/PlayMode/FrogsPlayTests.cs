@@ -142,6 +142,20 @@ namespace FrogsNLogs.Tests
 
         // ---------- tests (run in name order) ----------
 
+        [Test]
+        public void T0_LevelIsInTheBuildList()
+        {
+            // The Game Over restart reloads build-list entry #0, so the level must be first.
+            // (Read from disk because the test runner swaps the live list while it runs.)
+            string settings = File.ReadAllText(Path.Combine(Application.dataPath, "../ProjectSettings/EditorBuildSettings.asset"));
+            int first = settings.IndexOf("path: ", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(first, 0, "No scenes in the build list");
+            StringAssert.StartsWith("path: " + ScenePath, settings.Substring(first),
+                "The level must be the first (index 0) scene in File > Build Profiles");
+            StringAssert.Contains("enabled: 1", settings.Substring(Math.Max(0, first - 30), 30),
+                "The level is in the build list but unchecked");
+        }
+
         [UnityTest, Timeout(60000)]
         public IEnumerator T1_LevelLoadsWithEverythingInIt()
         {
@@ -241,8 +255,23 @@ namespace FrogsNLogs.Tests
             Assert.AreEqual("Game Over!", GameStateText(), "Game Over text should show");
             yield return Screenshot("04-game-over");
 
-            // Restart happens after 3 seconds.
+            // Restart happens after 3 seconds. GameState reloads the level by its build-list
+            // number. Unity's test runner temporarily swaps out the build list while tests run,
+            // so that reload can't work *inside a test* (the real game is fine - see
+            // T0_LevelIsInTheBuildList). In that case, tolerate Unity's "Cannot load scene"
+            // error and reload the level ourselves to check a fresh round starts cleanly.
+            bool reloadPossibleHere = SceneManager.GetActiveScene().buildIndex >= 0;
+            if (!reloadPossibleHere)
+            {
+                LogAssert.ignoreFailingMessages = true;
+            }
             yield return new WaitForSeconds(4f);
+            if (!reloadPossibleHere)
+            {
+                Debug.Log("[Playtest] Restart timer fired after Game Over; test runner hides the build list, so reloading the level manually");
+                LogAssert.ignoreFailingMessages = false;
+                yield return LoadLevel();
+            }
             for (int i = 0; i < 10; i++) yield return null;
             Assert.AreEqual(0, (int)GetStatic("ScoreCounter", "score"), "Score should reset after restart");
             Assert.IsTrue((bool)GetField(FindOne("PlayerHealth"), "alive"), "New frog should be alive after restart");
