@@ -1,0 +1,130 @@
+# Web version build & publish (added October 2026)
+#
+# Every push to master (and to the touch-controls-and-web branch while it's being built):
+#   1. builds the WebGL (web browser) version with Unity 6.3 on GitHub's servers
+#   2. publishes it to the "gh-pages" branch, which GitHub Pages serves as a playable link:
+#        https://rfcowgilliv.github.io/Frogs-N-Logs/
+#      (One-time setup: repo Settings -> Pages -> Source: "Deploy from a branch",
+#       Branch: gh-pages / root -> Save.)
+#
+# Because every version is built from the same project, new levels and features show up
+# on the web the moment they're merged. Uses the same UNITY_* secrets as unity-upgrade.yml.
+name: Web build
+
+on:
+  push:
+    branches: [ "master", "touch-controls-and-web" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One web build at a time; a newer push replaces a queued older one.
+concurrency:
+  group: unity-web
+  cancel-in-progress: false
+
+env:
+  PROJECT_PATH: "Documents/Coding Projects/Unity Projects/Frogs-N-Logs"
+  UNITY_STREAM: "6000.3"
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Free disk space for the Unity image
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Pick the newest Unity ${{ env.UNITY_STREAM }} WebGL image
+        id: version
+        run: |
+          url="https://hub.docker.com/v2/repositories/unityci/editor/tags?page_size=100&name=${UNITY_STREAM}"
+          version=$(curl -fsSL "$url" | jq -r '.results[].name' \
+                    | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-webgl-3$" \
+                    | sed -E 's/^ubuntu-(.*)-webgl-3$/\1/' | sort -V | tail -1)
+          if [ -z "$version" ]; then echo "::error::No WebGL image found for Unity ${UNITY_STREAM}"; exit 1; fi
+          echo "Using Unity $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "image=unityci/editor:ubuntu-${version}-webgl-3" >> "$GITHUB_OUTPUT"
+
+      - name: Pull Unity image
+        run: docker pull "${{ steps.version.outputs.image }}"
+
+      - name: Build the web version
+        id: unity
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          mkdir -p unity-logs web-build
+          set +e
+          docker run --rm \
+            -e UNITY_EMAIL -e UNITY_PASSWORD -e UNITY_LICENSE \
+            -e PROJECT_PATH -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            -e FROGS_WEB_PATH="/work/web-build" \
+            -v "$GITHUB_WORKSPACE":/work -w /work \
+            "${{ steps.version.outputs.image }}" \
+            bash -c '
+              mkdir -p /BlankProject/Assets /root/.local/share/unity3d/Unity
+              printf "%s" "$UNITY_LICENSE" > /root/.local/share/unity3d/Unity/Unity_lic.ulf
+              echo "== Activating (Personal: email + password)"
+              unity-editor -batchmode -nographics -quit \
+                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                -projectPath /BlankProject -logFile /work/unity-logs/activate.log
+              echo "== Building WebGL"
+              timeout --signal=KILL 3000 unity-editor -batchmode -nographics \
+                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                -projectPath "/work/$PROJECT_PATH" \
+                -executeMethod FrogsNLogs.EditorTools.UpgradeAndBuild.BuildWebGL \
+                -logFile /work/unity-logs/web.log
+              code=$?
+              echo "web build exit code: $code"
+              echo "== Returning license"
+              unity-editor -batchmode -nographics -quit -returnlicense \
+                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                -logFile /work/unity-logs/return.log
+              rm -f /root/.local/share/unity3d/Unity/Unity_lic.ulf
+              chown -R "$HOST_UID:$HOST_GID" /work
+              echo "$code" > /work/unity-logs/web.code
+            '
+          code=$(cat unity-logs/web.code 2>/dev/null || echo 98)
+          ls -la web-build web-build/Build 2>/dev/null | head -20
+          du -sh web-build 2>/dev/null
+          [ "$code" = "0" ] && [ -f web-build/index.html ]
+
+      - name: Report problems
+        if: failure()
+        run: |
+          for f in unity-logs/web.log unity-logs/activate.log; do
+            [ -f "$f" ] || continue
+            grep -E "error CS[0-9]+|\[FrogsWeb\]|Error building|Exception|Failed to|licens|Build Finished|BuildFailedException|il2cpp|emcc|wasm" "$f" \
+              | sort -u | head -120 > problems.txt
+            tail -60 "$f" | grep -v "^\s*$" >> problems.txt
+            msg=$(head -c 60000 problems.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Problems in $f::$msg"
+          done
+
+      - name: Publish to GitHub Pages (gh-pages branch)
+        run: |
+          site=$(mktemp -d)
+          cp -r web-build/. "$site/"
+          touch "$site/.nojekyll"   # serve Unity's files exactly as built
+          cd "$site"
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Web build from $GITHUB_REF_NAME @ ${GITHUB_SHA:0:7} (Unity ${{ steps.version.outputs.version }})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:gh-pages
+          {
+            echo "### Web version published"
+            echo "Branch \`gh-pages\` updated from \`$GITHUB_REF_NAME\` (${GITHUB_SHA:0:7})."
+            echo "Play it at https://rfcowgilliv.github.io/Frogs-N-Logs/ (once Pages is turned on)."
+          } >> "$GITHUB_STEP_SUMMARY"
