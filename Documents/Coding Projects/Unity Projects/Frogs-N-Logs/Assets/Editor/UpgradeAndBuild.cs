@@ -36,7 +36,7 @@ namespace FrogsNLogs.EditorTools
             Execute(exitWhenDone: true);
         }
 
-        // Web (WebGL) build, used by .github/workflows/web-build.yml (added 2026).
+        // Web (WebGL) build, used by the "web" job in .github/workflows/unity-upgrade.yml (added 2026).
         // Output goes to FROGS_WEB_PATH (default Build/Web). Gzip + "decompression fallback"
         // lets it run from any plain web host, including GitHub Pages, with no server setup.
         // Ribbit-ing the web, one browser at a time.
