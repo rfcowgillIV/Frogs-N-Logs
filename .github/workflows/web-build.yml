@@ -19,9 +19,10 @@ on:
 permissions:
   contents: write
 
-# One web build at a time; a newer push replaces a queued older one.
+# Shares the "unity-license" queue with unity-upgrade.yml: a Personal license can't be used
+# by two Unity runs at the same moment, so they take turns.
 concurrency:
-  group: unity-web
+  group: unity-license
   cancel-in-progress: false
 
 env:
@@ -75,10 +76,19 @@ jobs:
             bash -c '
               mkdir -p /BlankProject/Assets /root/.local/share/unity3d/Unity
               printf "%s" "$UNITY_LICENSE" > /root/.local/share/unity3d/Unity/Unity_lic.ulf
-              echo "== Activating (Personal: email + password)"
-              unity-editor -batchmode -nographics -quit \
-                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
-                -projectPath /BlankProject -logFile /work/unity-logs/activate.log
+              # Sign in, retrying a few times in case the Unity license servers are busy
+              # or a previous run is still giving the license back.
+              for attempt in 1 2 3 4; do
+                echo "== Activating (Personal: email + password), attempt $attempt"
+                unity-editor -batchmode -nographics -quit \
+                  -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath /BlankProject -logFile /work/unity-logs/activate.log
+                if ! grep -q "No valid Unity Editor license found" /work/unity-logs/activate.log; then
+                  echo "license OK"; break
+                fi
+                echo "license not ready yet, waiting $((attempt * 30))s"
+                sleep $((attempt * 30))
+              done
               echo "== Building WebGL"
               timeout --signal=KILL 3000 unity-editor -batchmode -nographics \
                 -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
