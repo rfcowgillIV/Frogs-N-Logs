@@ -1,0 +1,266 @@
+# Unity upgrade & build (added October 2026)
+#
+# Runs on pushes and pull requests to master (so every new feature or level gets a real
+# Unity build check), and on the "unity6-upgrade" branch, where it also commits upgraded files:
+#   1. picks the newest Unity 6.3 LTS editor available as a GameCI Docker image
+#   2. activates Unity with the UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD secrets
+#      (same method GameCI uses: the serial comes from your license file)
+#   3. opens the 2017 project in Unity 6, which upgrades it, then runs
+#      Assets/Editor/UpgradeAndBuild.cs to re-save every asset and build the game
+#   4. reports any compiler errors right on the run / pull request
+#   5. if everything worked, commits the upgraded files back to this branch
+#   6. returns the license seat so it doesn't count against your activations
+#
+# Your password and license are only ever read from GitHub secrets, which GitHub
+# hides (***) in all logs.
+name: Unity upgrade & build
+
+on:
+  push:
+    branches: [ "master", "unity6-upgrade" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: write
+
+# One Unity run at a time across the whole repo, so two runs never fight over the
+# same Personal license seat (they queue instead).
+concurrency:
+  group: unity-license
+  cancel-in-progress: false
+
+env:
+  PROJECT_PATH: "Documents/Coding Projects/Unity Projects/Frogs-N-Logs"
+  UNITY_STREAM: "6000.3"
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Free disk space for the Unity image
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Pick the newest Unity ${{ env.UNITY_STREAM }} image
+        id: version
+        run: |
+          url="https://hub.docker.com/v2/repositories/unityci/editor/tags?page_size=100&name=${UNITY_STREAM}"
+          tags=$(curl -fsSL "$url" | jq -r '.results[].name')
+          version=$(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-base-3$" \
+                    | sed -E 's/^ubuntu-(.*)-base-3$/\1/' | sort -V | tail -1)
+          if [ -z "$version" ]; then
+            echo "::error::No unityci/editor image found for Unity ${UNITY_STREAM}"
+            exit 1
+          fi
+          echo "Using Unity $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "image=unityci/editor:ubuntu-${version}-base-3" >> "$GITHUB_OUTPUT"
+
+      - name: Pull Unity image
+        run: docker pull "${{ steps.version.outputs.image }}"
+
+      - name: Read serial from license file (if it has one)
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then echo "::error::UNITY_LICENSE secret is empty"; exit 1; fi
+          # Paid licenses carry a serial in <DeveloperData>; Personal licenses usually leave it
+          # empty and are activated with email + password instead. Only "found/empty" is logged.
+          serial=$(python3 - <<'PY'
+          import base64, binascii, os, re
+          m = re.search(r'<DeveloperData\s+Value\s*=\s*"([^"]*)"', os.environ["UNITY_LICENSE"])
+          raw = re.sub(r"\s+", "", m.group(1)) if m else ""
+          try:
+              print(base64.b64decode(raw).decode("latin-1")[4:].strip() if raw else "")
+          except (binascii.Error, ValueError):
+              print("")
+          PY
+          )
+          if [ -n "$serial" ]; then
+            echo "::add-mask::$serial"
+            echo "UNITY_SERIAL=$serial" >> "$GITHUB_ENV"
+            echo "Serial found in license file - will use serial activation first."
+          else
+            echo "No serial in license file (normal for Personal) - will sign in with email + password."
+          fi
+
+      - name: Upgrade and build with Unity ${{ steps.version.outputs.version }}
+        id: unity
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          mkdir -p unity-logs
+          set +e
+          docker run --rm \
+            -e UNITY_SERIAL -e UNITY_EMAIL -e UNITY_PASSWORD -e UNITY_LICENSE \
+            -e PROJECT_PATH -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            -e FROGS_BUILD_PATH="/work/unity-build/FrogsNLogs.x86_64" \
+            -e FROGS_SCREENSHOT_DIR="/work/playtest-screenshots" \
+            -v "$GITHUB_WORKSPACE":/work -w /work \
+            "${{ steps.version.outputs.image }}" \
+            bash -c '
+              mkdir -p /BlankProject/Assets /root/.local/share/unity3d/Unity
+              # Also drop the license file where Unity on Linux looks for it.
+              printf "%s" "$UNITY_LICENSE" > /root/.local/share/unity3d/Unity/Unity_lic.ulf
+              act=1
+              if [ -n "$UNITY_SERIAL" ]; then
+                echo "== Activating (serial)"
+                unity-editor -batchmode -nographics -quit \
+                  -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath /BlankProject -logFile /work/unity-logs/activate.log
+                act=$?
+              fi
+              if [ $act -ne 0 ]; then
+                echo "== Activating (Personal: email + password)"
+                unity-editor -batchmode -nographics -quit \
+                  -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath /BlankProject -logFile /work/unity-logs/activate-personal.log
+                act=$?
+              fi
+              echo "activation exit code: $act"
+              # Try the upgrade even if activation reported an error: the license file
+              # alone may be enough, and its log tells us exactly what Unity thinks.
+              echo "== Upgrading project and building"
+              timeout --signal=KILL 2400 unity-editor -batchmode -nographics -accept-apiupdate \
+                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                -projectPath "/work/$PROJECT_PATH" \
+                -executeMethod FrogsNLogs.EditorTools.UpgradeAndBuild.Run \
+                -logFile /work/unity-logs/upgrade.log
+              up=$?
+              echo "upgrade exit code: $up"
+              pt=97
+              if [ $up -eq 0 ]; then
+                echo "== Play testing the level"
+                # Hard 20-minute cap so a stuck test can never hang the whole run.
+                timeout --signal=KILL 1200 unity-editor -batchmode -accept-apiupdate \
+                  -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                  -projectPath "/work/$PROJECT_PATH" \
+                  -runTests -testPlatform PlayMode \
+                  -testResults /work/unity-logs/playtest.xml \
+                  -logFile /work/unity-logs/playtest.log
+                pt=$?
+                echo "play test exit code: $pt"
+                [ $pt -eq 137 ] && echo "PLAY TEST TIMED OUT after 20 minutes" | tee -a /work/unity-logs/playtest.log
+              fi
+              echo "$pt" > /work/unity-logs/playtest.code
+              echo "== Returning license"
+              unity-editor -batchmode -nographics -quit -returnlicense \
+                -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" \
+                -logFile /work/unity-logs/return.log
+              rm -f /root/.local/share/unity3d/Unity/Unity_lic.ulf
+              chown -R "$HOST_UID:$HOST_GID" /work
+              echo "$act" > /work/unity-logs/activate.code
+              echo "$up" > /work/unity-logs/upgrade.code
+            '
+          act=$(cat unity-logs/activate.code 2>/dev/null || echo 98)
+          up=$(cat unity-logs/upgrade.code 2>/dev/null || echo 98)
+          echo "activate=$act" >> "$GITHUB_OUTPUT"
+          echo "upgrade=$up" >> "$GITHUB_OUTPUT"
+          [ "$up" = "0" ]
+
+      # Turns Unity's log into readable error annotations on the run page.
+      - name: Report problems
+        if: failure()
+        run: |
+          annotate() { # title, file-with-lines
+            [ -s "$2" ] || return 0
+            msg=$(head -c 60000 "$2" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=$1::$msg"
+          }
+          if [ "${{ steps.unity.outputs.activate }}" != "0" ]; then
+            cat unity-logs/activate*.log 2>/dev/null \
+              | grep -iE "licens|serial|login|credential|entitle|token|error|fail" \
+              | grep -v "^\s*$" | tail -60 > act.txt
+            annotate "License activation problems" act.txt
+          fi
+          if [ -f unity-logs/upgrade.log ]; then
+            grep -E "error CS[0-9]+|Scripts have compiler errors|\[FrogsUpgrade\]|Error building|BuildFailedException|Exception:|executeMethod class|Aborting batchmode|Failed to|Build Finished, Result|[Ll]icens|[Ee]ntitlement" \
+              unity-logs/upgrade.log | sort -u | head -150 > up.txt
+            annotate "Upgrade/build problems" up.txt
+            tail -80 unity-logs/upgrade.log | grep -v "^\s*$" > tail.txt
+            annotate "End of Unity log" tail.txt
+          fi
+
+      - name: Commit upgraded project
+        # Only the upgrade branch commits re-saved files; everywhere else this is a build check.
+        if: success() && github.ref == 'refs/heads/unity6-upgrade' 
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A "$PROJECT_PATH"
+          git status --short | head -50
+          if git diff --cached --quiet; then
+            echo "Nothing changed - project already upgraded."
+          else
+            git commit -q -m "Upgrade project to Unity ${{ steps.version.outputs.version }} (automated)
+
+          Opened in Unity ${{ steps.version.outputs.version }}, re-saved every asset as text,
+          and built for Linux successfully. Generated by .github/workflows/unity-upgrade.yml."
+            git push
+          fi
+          {
+            echo "### Unity ${{ steps.version.outputs.version }} upgrade succeeded"
+            grep "\[FrogsUpgrade\]" unity-logs/upgrade.log | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Play test results
+        if: always() && steps.unity.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import os, xml.etree.ElementTree as ET
+          path = "unity-logs/playtest.xml"
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+          if not os.path.exists(path):
+              tail = ""
+              if os.path.exists("unity-logs/playtest.log"):
+                  lines = [l for l in open("unity-logs/playtest.log", errors="replace").read().splitlines() if l.strip()]
+                  tail = "%0A".join(lines[-60:]).replace("::", ": :")
+              print("::error title=Play test produced no results::" + tail[:60000])
+              raise SystemExit(1)
+          root = ET.parse(path).getroot()
+          cases = root.iter("test-case")
+          failed = 0
+          summary.write("### Automated play test\n\n| Test | Result | Time |\n|---|---|---|\n")
+          for c in cases:
+              name, result = c.get("name"), c.get("result")
+              dur = float(c.get("duration") or 0)
+              out = (c.findtext("output") or "").strip()
+              notes = "%0A".join(l for l in out.splitlines() if "[Playtest]" in l)
+              summary.write(f"| {name} | {result} | {dur:.1f}s |\n")
+              if result == "Passed":
+                  print(f"::notice title={name} passed::{notes or 'ok'}")
+              else:
+                  failed += 1
+                  msg = (c.findtext("failure/message") or "").strip().replace("%", "%25").replace("\n", "%0A")
+                  print(f"::error title={name} {result}::{msg}%0A{notes}"[:60000])
+          raise SystemExit(1 if failed else 0)
+          PY
+
+      # Screenshots go to the "playtest-screenshots" branch so they can be viewed on GitHub.
+      - name: Save play test screenshots
+        if: always() && hashFiles('playtest-screenshots/*.png') != ''
+        run: |
+          src="$GITHUB_WORKSPACE/playtest-screenshots"
+          tmp=$(mktemp -d)
+          cd "$tmp"
+          git init -q -b playtest-screenshots
+          cp "$src"/*.png .
+          printf '# Play test screenshots\n\nFrom run %s on %s (commit %s).\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_REF_NAME" "${GITHUB_SHA:0:7}" > README.md
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Play test screenshots from run $GITHUB_RUN_ID"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
+            HEAD:playtest-screenshots
+          ls -1 *.png

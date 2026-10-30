@@ -33,11 +33,39 @@ namespace UnityStandardAssets.Water
         private static bool s_InsideWater;
 
 
-        // This is called when it's known that the object will be rendered by some
-        // camera. We render reflections / refractions and do other updates here.
-        // Because the script executes in edit mode, reflections for the scene view
-        // camera will just work!
-        public void OnWillRenderObject()
+        // 2026 UNITY 6 FIX: this used to run in OnWillRenderObject(), which happens *after*
+        // Unity has decided what each camera can see. Rendering the reflection camera from
+        // there made Unity 6 log "Unable to add Renderer to the Scene after Culling" every
+        // frame. Unity's own suggested fix is to do the work earlier, before culling, so it
+        // now runs from Camera.onPreCull for each camera that can see the water.
+        // Same reflections, better timing - it's all water under the bridge.
+        void OnEnable()
+        {
+            Camera.onPreCull -= OnCameraPreCull;
+            Camera.onPreCull += OnCameraPreCull;
+        }
+
+        private void OnCameraPreCull(Camera cam)
+        {
+            if (cam == null || m_ReflectionCameras.ContainsValue(cam) || m_RefractionCameras.ContainsValue(cam))
+            {
+                return; // never render water for our own reflection/refraction cameras
+            }
+            if ((cam.cullingMask & (1 << gameObject.layer)) == 0)
+            {
+                return; // this camera doesn't draw the water layer
+            }
+            Renderer waterRenderer = GetComponent<Renderer>();
+            if (waterRenderer == null ||
+                !GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(cam), waterRenderer.bounds))
+            {
+                return; // water is off-screen for this camera
+            }
+            RenderWaterFor(cam);
+        }
+
+        // Renders the reflection / refraction textures for one camera.
+        private void RenderWaterFor(Camera cam)
         {
             if (!enabled || !GetComponent<Renderer>() || !GetComponent<Renderer>().sharedMaterial ||
                 !GetComponent<Renderer>().enabled)
@@ -45,7 +73,6 @@ namespace UnityStandardAssets.Water
                 return;
             }
 
-            Camera cam = Camera.current;
             if (!cam)
             {
                 return;
@@ -169,6 +196,7 @@ namespace UnityStandardAssets.Water
         // Cleanup all the objects we possibly have created
         void OnDisable()
         {
+            Camera.onPreCull -= OnCameraPreCull;
             if (m_ReflectionTexture)
             {
                 DestroyImmediate(m_ReflectionTexture);

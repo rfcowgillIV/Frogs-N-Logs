@@ -1,0 +1,22 @@
+# Unity-generated folders (added in the 2026 update; see SECURITY_UPDATES.md).
+# Unity rebuilds all of these automatically when the project is opened.
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Bb]uild/
+**/[Bb]uilds/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+
+# Visual Studio / IDE files Unity regenerates
+*.csproj
+*.sln
+*.userprefs
+*.suo
+*.user
+.vs/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+.vscode/

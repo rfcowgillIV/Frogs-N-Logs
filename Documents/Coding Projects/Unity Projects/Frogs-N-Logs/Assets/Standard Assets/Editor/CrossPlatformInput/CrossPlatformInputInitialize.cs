@@ -32,8 +32,8 @@ namespace UnityStandardAssets.CrossPlatformInput.Inspector
             {
                 case BuildTarget.Android:
                 case BuildTarget.iOS:
-                case BuildTarget.PSM: 
-                case BuildTarget.Tizen: 
+                // 2026 update: PSM (PlayStation Mobile) and Tizen were removed from Unity years ago,
+                // so these cases no longer compile. Phone home, minus the extinct phones.
                 case BuildTarget.WSAPlayer: 
                     EditorUtility.DisplayDialog("Mobile Input",
                                                 "You have enabled Mobile Input. You'll need to use the Unity Remote app on a connected device to control your game in the Editor.",
@@ -92,9 +92,7 @@ namespace UnityStandardAssets.CrossPlatformInput.Inspector
             {
                 BuildTargetGroup.Android,
                 BuildTargetGroup.iOS,
-                BuildTargetGroup.PSM, 
-                BuildTargetGroup.SamsungTV,
-                BuildTargetGroup.Tizen,
+                // 2026 update: PSM, SamsungTV and Tizen removed (no longer exist in Unity).
                 BuildTargetGroup.WSA 
             };
 

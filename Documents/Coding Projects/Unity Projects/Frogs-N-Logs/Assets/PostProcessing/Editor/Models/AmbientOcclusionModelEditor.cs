@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.PostProcessing; // 2026 fix: this import was missing, so Unity 6 couldn't find AmbientOcclusionModel
 
 namespace UnityEditor.PostProcessing
 {

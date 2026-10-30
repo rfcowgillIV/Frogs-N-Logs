@@ -6,6 +6,13 @@ using UnityEngine.SceneManagement;
 public class GameState : MonoBehaviour {
 
 	private bool gameStarted = false;
+
+	// BUG FIX (2026): new flag. After the frog died, gameStarted went back to
+	// false, so pressing Space on the "Game Over!" screen called StartGame()
+	// again - it hid the Game Over text and switched controls back on for a
+	// frog that no longer existed, while the restart countdown kept running.
+	// Once it's game over, it's game over (until the level reloads). Croak.
+	private bool gameOver = false;
 	[SerializeField]
 	private Text gameStateText;
 	[SerializeField]
@@ -40,14 +47,17 @@ public class GameState : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		//if the game has not started and the player presses the space bar...
-		if (gameStarted == false && Input.GetKeyUp (KeyCode.Space)) {
+		if (gameStarted == false && gameOver == false && Input.GetKeyUp (KeyCode.Space)) {
 			//... then start the game.
 			StartGame();
 		}
 		//if the player is no longer alive....
 		if(playerHealth.alive == false) {
-			//... end the game.
+			//... end the game. (BUG FIX 2026: only once - this used to run every
+			//single frame, re-setting the text and hiding the player 60x a second.)
+			if (gameOver == false) {
 				EndGame();
+			}
 
 			//... increment a timer to count up to restarting...
 			restartTimer = restartTimer + Time.deltaTime;
@@ -89,6 +99,7 @@ public class GameState : MonoBehaviour {
 
 			//Set the game state
 			gameStarted = false;
+			gameOver = true;
 
 			//Show the game over text
 			gameStateText.color = Color.white;
