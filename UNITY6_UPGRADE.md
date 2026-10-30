@@ -58,6 +58,22 @@ Any error logged during play fails the test. Screenshots are saved to the
 `playtest-screenshots` branch on GitHub. You can also run the tests yourself in Unity:
 **Window → General → Test Runner → PlayMode → Run All**.
 
+### Visual fixes found by the play test screenshots
+The first automated screenshots showed a **white frog and bird** and a **gray checkerboard
+ground**. These links were already broken in the original 2017 files (the textures were likely
+re-imported at some point and got new IDs), so the frog was probably white in 2017 too.
+- `Frog`, `Bird`, `Rock` and `Wooden Log` materials now point at their textures in
+  `Assets/Materials/Textures/<name>/` (base color, normal, metallic and AO where available).
+  Normal maps are now imported as normal maps, and mask textures as linear data.
+- The terrain's ground texture was missing from the repo entirely. It now uses Unity's
+  **GrassHillAlbedo** from Standard Assets as a best guess. To change it, select the Terrain →
+  Paint Texture → pick the layer and swap the texture (Sand, Mud and Cliff are also included).
+
+### Water reflection fix
+`Standard Assets/.../Water.cs` rendered its reflection cameras from `OnWillRenderObject`, which
+made Unity 6 log *"Unable to add Renderer to the Scene after Culling"* every frame. It now
+renders from `Camera.onPreCull`, the earlier point in the frame that Unity's message recommends.
+
 ## Please check when you play
 - **The bird.** `Assets/Prefabs/Bird.prefab` is the one prefab Unity didn't re-save in the new
   format, which can mean it couldn't fully load it. The level still built. If the bird looks or
