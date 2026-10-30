@@ -269,6 +269,11 @@ namespace FrogsNLogs.Tests
             if (!reloadPossibleHere)
             {
                 Debug.Log("[Playtest] Restart timer fired after Game Over; test runner hides the build list, so reloading the level manually");
+                // Stop GameState retrying the reload every frame, let the last attempt's
+                // error flush, and only then go back to failing on errors.
+                ((Behaviour)FindOne("GameState")).enabled = false;
+                yield return null;
+                yield return null;
                 LogAssert.ignoreFailingMessages = false;
                 yield return LoadLevel();
             }
