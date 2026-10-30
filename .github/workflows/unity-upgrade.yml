@@ -305,6 +305,7 @@ jobs:
         run: |
           site=$(mktemp -d)
           cp -r web-build/. "$site/"
+          python3 .github/scripts/web-fullscreen.py "$site/index.html"   # fill any screen, no scroll on drag
           touch "$site/.nojekyll"
           cd "$site"
           git init -q -b gh-pages
