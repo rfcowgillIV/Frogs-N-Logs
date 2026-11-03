@@ -40,6 +40,10 @@ public class FrogsUI : MonoBehaviour
     private GameObject hud;
     private GameObject gameOverPanel;
     private Text fpsText;
+    private Text levelText;
+    private Text statusText;
+    private Text toastText;
+    private float toastUntil;
     private Text titleBestText;
     private Text titleDifficultyText;
     private Text menuTitle;
@@ -85,6 +89,11 @@ public class FrogsUI : MonoBehaviour
         if (Instance != null && Instance.gameObject.scene == scene) return;
         var go = new GameObject("Frogs UI");
         SceneManager.MoveGameObjectToScene(go, scene);
+        // The round's helpers live alongside the menus, so they all reset together.
+        go.AddComponent<GameDirector>();
+        go.AddComponent<LevelManager>();
+        go.AddComponent<HazardSpawner>();
+        go.AddComponent<PowerUpSpawner>();
         go.AddComponent<FrogsUI>();
     }
 
@@ -94,6 +103,8 @@ public class FrogsUI : MonoBehaviour
         GameSettings.Changed += RefreshAll;
         GameState.RoundStarted += OnRoundStarted;
         GameState.RoundEnded += OnRoundEnded;
+        FrogEffects.Announce += Toast;
+        LevelManager.LevelChanged += OnLevelChanged;
     }
 
     void OnDestroy()
@@ -101,6 +112,8 @@ public class FrogsUI : MonoBehaviour
         GameSettings.Changed -= RefreshAll;
         GameState.RoundStarted -= OnRoundStarted;
         GameState.RoundEnded -= OnRoundEnded;
+        FrogEffects.Announce -= Toast;
+        LevelManager.LevelChanged -= OnLevelChanged;
         if (Instance == this) Instance = null;
         // Never leave the game frozen if the level unloads while paused.
         Time.timeScale = 1f;
@@ -184,6 +197,8 @@ public class FrogsUI : MonoBehaviour
             else if (GameState.Current != null && GameState.Current.IsPlaying) OpenMenu(true);
         }
 
+        UpdateHudText();
+
         if (fpsText != null)
         {
             bool show = GameSettings.ShowFps;
@@ -225,7 +240,9 @@ public class FrogsUI : MonoBehaviour
         hud.SetActive(false);
         if (menuPanel.activeSelf) CloseMenu();
         Difficulty d = GameSettings.Difficulty;
-        gameOverText.text = "You ate " + score + (score == 1 ? " fly" : " flies")
+        string reached = LevelManager.Instance != null && LevelManager.Instance.Level > 1
+            ? "Made it to Level " + LevelManager.Instance.Level + ": " + LevelManager.Instance.LevelName + "\n" : "";
+        gameOverText.text = reached + "You ate " + score + (score == 1 ? " fly" : " flies")
                             + "\nBest on " + d + ": " + GameSettings.GetBestScore(d)
                             + (newBest && score > 0 ? "\n<color=#FFD152>New best!</color>" : "");
         gameOverPanel.SetActive(true);
@@ -318,7 +335,78 @@ public class FrogsUI : MonoBehaviour
         frt.sizeDelta = new Vector2(420f, 30f);
         Destroy(fpsText.GetComponent<LayoutElement>());
         fpsText.gameObject.AddComponent<Shadow>();
+
+        // Level + fly goal (top centre) and power-up status underneath.
+        levelText = HudText("Level", 26, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(900f, 34f), Soft);
+        statusText = HudText("Status", 22, new Vector2(0.5f, 1f), new Vector2(0f, -58f), new Vector2(900f, 30f), Gold);
         hud.SetActive(false);
+
+        // Big announcements ("Level 2: The Swamp", "Golden fly! +5") - outside the HUD so
+        // they can show over the game-over screen too.
+        toastText = HudText("Toast", 44, new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(1100f, 60f), Gold);
+        toastText.transform.SetParent(root, false);
+        toastText.gameObject.SetActive(false);
+    }
+
+    private Text HudText(string name, int size, Vector2 anchor, Vector2 position, Vector2 box, Color color)
+    {
+        Text t = Label(hud.GetComponent<RectTransform>(), "", size, color, FontStyle.Bold, TextAnchor.MiddleCenter);
+        t.name = name;
+        Destroy(t.GetComponent<LayoutElement>());
+        var rt = t.rectTransform;
+        rt.anchorMin = rt.anchorMax = anchor;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = position;
+        rt.sizeDelta = box;
+        t.horizontalOverflow = HorizontalWrapMode.Overflow;
+        var outline = t.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.75f);
+        return t;
+    }
+
+    public void Toast(string message)
+    {
+        if (toastText == null) return;
+        toastText.text = message;
+        toastText.color = Gold;
+        toastText.gameObject.SetActive(true);
+        toastUntil = Time.unscaledTime + 2.2f;
+    }
+
+    private void OnLevelChanged(int level, string name)
+    {
+        Toast("Level " + level + ": " + name);
+    }
+
+    private void UpdateHudText()
+    {
+        if (toastText != null && toastText.gameObject.activeSelf)
+        {
+            float left = toastUntil - Time.unscaledTime;
+            if (left <= 0f) toastText.gameObject.SetActive(false);
+            else
+            {
+                Color c = toastText.color;
+                c.a = Mathf.Clamp01(left / 0.5f);
+                toastText.color = c;
+            }
+        }
+        if (!hud.activeSelf || levelText == null) return;
+
+        LevelManager levels = LevelManager.Instance;
+        if (levels != null)
+        {
+            int goal = levels.NextGoal;
+            levelText.text = "Level " + levels.Level + " · " + levels.LevelName
+                             + (goal > 0 ? "     " + ScoreCounter.score + " / " + goal + " flies to "
+                                           + LevelManager.Names[levels.Level] : "     How long can you last?");
+        }
+
+        string status = "";
+        if (FrogEffects.Boosted) status += "Speed boost " + Mathf.CeilToInt(FrogEffects.BoostSecondsLeft) + "s   ";
+        if (FrogEffects.ShieldActive) status += "Lily-pad shield up   ";
+        if (BirdMovement.IsStunned) status += "Bird is dizzy!   ";
+        statusText.text = status.TrimEnd();
     }
 
     // ---------------------------------------------------------------- game over

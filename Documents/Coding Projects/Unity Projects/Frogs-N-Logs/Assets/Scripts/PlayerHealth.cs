@@ -16,6 +16,10 @@ public class PlayerHealth : MonoBehaviour {
 
 	void OnTriggerEnter(Collider other) {
 		if (other.CompareTag ("Enemy") && alive == true) {
+			// Nov 2026: a lily-pad shield (or the moment right after it pops) saves the frog.
+			if (FrogEffects.TryAbsorbHit (other)) {
+				return;
+			}
 			alive = false;
 
 			//create the pickup particles

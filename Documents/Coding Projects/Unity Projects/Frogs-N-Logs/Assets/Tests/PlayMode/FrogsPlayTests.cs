@@ -547,5 +547,92 @@ namespace FrogsNLogs.Tests
             GameType("KeyBindings").GetMethod("Set").Invoke(null, new object[] { "up", KeyCode.I });
             Assert.AreEqual(KeyCode.I, GameType("KeyBindings").GetMethod("Get").Invoke(null, new object[] { "up" }));
         }
+
+        // ---------- Nov 2026 round 2: levels, hazards, power-ups ----------
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T10_FlyGoalsUnlockTheSwampAndNightWithTheirHazards()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            // Keep the bird still so it can't end the run while we look around.
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+
+            object levels = GetStaticProp("LevelManager", "Instance");
+            Assert.IsNotNull(levels, "Level manager didn't load");
+            Func<int> level = () => (int)levels.GetType().GetProperty("Level").GetValue(levels);
+            Assert.AreEqual(1, level(), "Should start on Level 1 (The Pond)");
+            StringAssert.Contains("Level 1", AllVisibleText(), "HUD should show the level");
+
+            // Medium: 10 flies opens the Swamp.
+            SetStaticField("ScoreCounter", "score", 10);
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(2, level(), "10 flies should move us to the Swamp");
+            Assert.IsTrue(RenderSettings.fog, "The Swamp should be foggy");
+            Assert.IsNotNull(GameObject.Find("Snake"), "A snake should appear in the Swamp");
+            Assert.IsNotNull(GameObject.Find("Drifting Log"), "Logs should drift through the Swamp");
+            yield return Screenshot("08-the-swamp");
+
+            // 24 flies: Night, and the bird is faster.
+            SetStaticField("ScoreCounter", "score", 24);
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(3, level(), "24 flies should bring on the Night");
+            Assert.GreaterOrEqual((float)GetStatic("BirdMovement", "SpeedMultiplier"), 1.15f, "The bird should be faster at night");
+            yield return Screenshot("09-night");
+        }
+
+        private static Component SpawnPowerUp(string type)
+        {
+            Component spawner = FindOne("PowerUpSpawner");
+            MethodInfo spawn = spawner.GetType().GetMethod("Spawn");
+            var go = (GameObject)spawn.Invoke(spawner, new[] { Enum("PowerUpType", type) });
+            Assert.IsNotNull(go, "Couldn't place a " + type);
+            Component pickup = go.GetComponentInChildren(GameType("PowerUpPickup"));
+            Assert.IsNotNull(pickup, type + " has no pickup");
+            return pickup;
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T11_PowerUpsGoldenFlySpeedBoostAndShield()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+            Collider frogCollider = GameObject.FindWithTag("Player").GetComponentInChildren<Collider>();
+
+            // Golden fly: +5.
+            Component golden = SpawnPowerUp("GoldenFly");
+            yield return null;
+            yield return Screenshot("10-golden-fly");
+            int before = (int)GetStatic("ScoreCounter", "score");
+            golden.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.AreEqual(before + 5, (int)GetStatic("ScoreCounter", "score"), "Golden fly should be worth 5");
+
+            // Speed boost: faster frog for a few seconds.
+            Component orb = SpawnPowerUp("SpeedBoost");
+            orb.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            yield return null;
+            Assert.Greater((float)GetStatic("PlayerMovement", "SpeedMultiplier"), 1.5f, "Speed boost should speed the frog up");
+
+            // Shield: the next catch pops the shield instead of ending the game.
+            Component pad = SpawnPowerUp("Shield");
+            pad.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.IsTrue((bool)GameType("FrogEffects").GetField("ShieldActive").GetValue(null), "Shield should be up");
+
+            Component health = FindOne("PlayerHealth");
+            Collider birdCollider = GameObject.FindWithTag("Enemy").GetComponentInChildren<Collider>();
+            health.SendMessage("OnTriggerEnter", birdCollider);
+            yield return null;
+            Assert.IsTrue((bool)GetField(health, "alive"), "Shield should save the frog");
+            Assert.IsFalse((bool)GameType("FrogEffects").GetField("ShieldActive").GetValue(null), "Shield should be used up");
+            Assert.IsTrue((bool)GetStaticProp("BirdMovement", "IsStunned"), "The bird should be dizzy after hitting the shield");
+        }
     }
 }

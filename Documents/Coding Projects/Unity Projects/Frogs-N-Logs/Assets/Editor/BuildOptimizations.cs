@@ -142,6 +142,8 @@ namespace FrogsNLogs.EditorTools
                     if (go.GetComponentInParent<UnityEngine.AI.NavMeshAgent>() != null) continue;
                     if (go.GetComponent<ParticleSystem>() != null) continue;
                     if (go.GetComponent("Water") != null || go.name.ToLowerInvariant().Contains("water")) continue;
+                    // Logs stay un-batched: the drifting-log hazard borrows their bark material.
+                    if (go.name.ToLowerInvariant().Contains("log")) continue;
                     StaticEditorFlags flags = GameObjectUtility.GetStaticEditorFlags(go);
                     GameObjectUtility.SetStaticEditorFlags(go, flags | StaticEditorFlags.BatchingStatic);
                     marked++;

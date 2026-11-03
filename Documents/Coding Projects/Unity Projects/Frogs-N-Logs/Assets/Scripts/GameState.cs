@@ -49,6 +49,8 @@ public class GameState : MonoBehaviour {
 		// Temporary effects (power-ups, stuns) never carry over into a new round.
 		PlayerMovement.SpeedMultiplier = 1f;
 		BirdMovement.SpeedMultiplier = 1f;
+		BirdMovement.StunnedUntil = 0f;
+		FrogEffects.ResetRound ();
 	}
 
 	void OnDestroy () {

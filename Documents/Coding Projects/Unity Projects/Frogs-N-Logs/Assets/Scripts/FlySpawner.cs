@@ -26,6 +26,11 @@ public class FlySpawner : MonoBehaviour {
 	private static FlySpawner instance;
 	private readonly Stack<GameObject> sleepingFlies = new Stack<GameObject> ();
 
+	// The fly model, shared with the golden-fly power-up.
+	public GameObject FlyPrefab {
+		get { return flyPrefab; }
+	}
+
 	public int FlyMinimum {
 		get { return DifficultyRules.FlyMinimum (GameSettings.Difficulty, totalyFlyMinimum); }
 	}
