@@ -634,5 +634,94 @@ namespace FrogsNLogs.Tests
             Assert.IsFalse((bool)GameType("FrogEffects").GetField("ShieldActive").GetValue(null), "Shield should be used up");
             Assert.IsTrue((bool)GetStaticProp("BirdMovement", "IsStunned"), "The bird should be dizzy after hitting the shield");
         }
+
+        // ---------- Nov 2026 round 3: shop, laser, looks, achievements ----------
+
+        private static bool Buy(string id)
+        {
+            return (bool)GameType("Shop").GetMethod("TryBuy").Invoke(null, new object[] { id });
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T12_ShopUpgradesWork()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            Collider frogCollider = GameObject.FindWithTag("Player").GetComponentInChildren<Collider>();
+
+            // Eating flies fills the wallet.
+            Component fly = FindOne("FlyPickUp");
+            fly.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            yield return null;
+            Assert.GreaterOrEqual((int)GetStaticProp("Shop", "Wallet"), 1, "Eating a fly should add to the fly wallet");
+
+            // Can't buy what you can't afford...
+            Assert.IsFalse(Buy("double"), "Shouldn't be able to buy Double flies with 1 fly");
+            // ...but with a full wallet everything works.
+            PlayerPrefs.SetInt("FNL.wallet", 2000);
+            Assert.IsTrue(Buy("speed"), "Buy Strong legs");
+            Assert.IsTrue(Buy("magnet") && Buy("magnet") && Buy("magnet"), "Buy all 3 magnet levels");
+            Assert.IsTrue(Buy("double"), "Buy Double flies");
+            Assert.IsTrue(Buy("laser"), "Buy Laser eyes");
+            Assert.IsTrue(Buy("skin.gold"), "Buy Golden frog");
+            Assert.IsTrue(Buy("hat.crown"), "Buy Crown");
+            yield return null;
+            yield return null;
+
+            Assert.Greater((float)GetStatic("PlayerMovement", "SpeedMultiplier"), 1.05f, "Strong legs should speed the frog up");
+            Assert.IsNotNull(GameObject.Find("Frog Hat"), "The crown should be on the frog");
+
+            // Double flies: next fly is worth 2.
+            int before = (int)GetStatic("ScoreCounter", "score");
+            Component another = FindOne("FlyPickUp");
+            another.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.AreEqual(before + 2, (int)GetStatic("ScoreCounter", "score"), "Double flies should give 2 per fly");
+
+            // Fly magnet: a fly 5 m away drifts closer.
+            Component magnetFly = FindOne("FlyPickUp");
+            Transform frog = GameObject.FindWithTag("Player").transform;
+            magnetFly.transform.position = frog.position + new Vector3(5f, 0.8f, 0f);
+            float startDistance = Vector3.Distance(Flat(magnetFly.transform.position), Flat(frog.position));
+            yield return new WaitForSeconds(0.6f);
+            float endDistance = magnetFly == null || !magnetFly.gameObject.activeInHierarchy ? 0f
+                : Vector3.Distance(Flat(magnetFly.transform.position), Flat(frog.position));
+            Assert.Less(endDistance, startDistance - 0.5f, "Fly magnet should pull nearby flies in");
+
+            // Laser eyes: zap the bird when it's in range.
+            bird.transform.position = frog.position + new Vector3(0f, 0f, 8f);
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().Warp(bird.transform.position);
+            object director = GetStaticProp("GameDirector", "Instance");
+            bool hit = (bool)director.GetType().GetMethod("FireLaser").Invoke(director, null);
+            yield return null;
+            Assert.IsTrue(hit, "Laser should hit a bird 8 m away");
+            Assert.IsTrue((bool)GetStaticProp("BirdMovement", "IsStunned"), "Zapped bird should be dizzy");
+            yield return Screenshot("11-shop-upgrades-zap");
+
+            Assert.IsTrue((bool)GameType("Achievements").GetMethod("Has").Invoke(null, new object[] { "shopper" }), "Buying should unlock Shopper");
+            Assert.IsTrue((bool)GameType("Achievements").GetMethod("Has").Invoke(null, new object[] { "first" }), "Eating a fly should unlock First bite");
+        }
+
+        private static Vector3 Flat(Vector3 v) { return new Vector3(v.x, 0f, v.z); }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T13_ShopTabShowsInThePauseMenu()
+        {
+            PlayerPrefs.SetInt("FNL.wallet", 75);
+            yield return LoadLevel();
+            yield return StartGame();
+            object ui = GetStaticProp("FrogsUI", "Instance");
+            ui.GetType().GetMethod("OpenMenu").Invoke(ui, new object[] { true });
+            FindButton("Shop").onClick.Invoke();
+            yield return null;
+            string text = AllVisibleText();
+            StringAssert.Contains("Fly wallet: 75", text);
+            StringAssert.Contains("Laser eyes", text);
+            StringAssert.Contains("Top hat", text);
+            yield return Screenshot("12-shop");
+            FindButton("Resume").onClick.Invoke();
+        }
     }
 }

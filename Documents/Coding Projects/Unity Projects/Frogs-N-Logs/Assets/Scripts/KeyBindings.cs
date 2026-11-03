@@ -6,6 +6,8 @@ using UnityEngine;
 // as well, so nobody can lock themselves out by remapping. Start is always Space/Enter
 // and Escape always pauses for the same reason.
 //
+// Gamepads work too (Nov 2026): left stick moves, A starts, Start pauses, X fires the laser.
+//
 // Have it your way: frogs don't judge your keyboard layout.
 public static class KeyBindings
 {
@@ -14,8 +16,9 @@ public static class KeyBindings
     public const string Left = "left";
     public const string Right = "right";
     public const string Pause = "pause";
+    public const string Laser = "laser";
 
-    public static readonly string[] Actions = { Up, Down, Left, Right, Pause };
+    public static readonly string[] Actions = { Up, Down, Left, Right, Pause, Laser };
 
     public static KeyCode DefaultFor(string action)
     {
@@ -25,6 +28,7 @@ public static class KeyBindings
             case Down: return KeyCode.S;
             case Left: return KeyCode.A;
             case Right: return KeyCode.D;
+            case Laser: return KeyCode.L;
             default: return KeyCode.P;
         }
     }
@@ -37,6 +41,7 @@ public static class KeyBindings
             case Down: return "Move down";
             case Left: return "Move left";
             case Right: return "Move right";
+            case Laser: return "Fire laser (shop)";
             default: return "Pause";
         }
     }
@@ -51,7 +56,8 @@ public static class KeyBindings
     {
         return key == KeyCode.Escape || key == KeyCode.Space || key == KeyCode.Return || key == KeyCode.KeypadEnter
             || key == KeyCode.UpArrow || key == KeyCode.DownArrow || key == KeyCode.LeftArrow || key == KeyCode.RightArrow
-            || (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6) || key == KeyCode.None;
+            || (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6) || key == KeyCode.None
+            || key >= KeyCode.JoystickButton0;
     }
 
     // Assign a key; if another action already used it, that action swaps to our old key.
@@ -85,17 +91,38 @@ public static class KeyBindings
         if (Input.GetKey(Get(Left)) || Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
         if (Input.GetKey(Get(Up)) || Input.GetKey(KeyCode.UpArrow)) z += 1f;
         if (Input.GetKey(Get(Down)) || Input.GetKey(KeyCode.DownArrow)) z -= 1f;
-        return new Vector3(x, 0f, z);
+        Vector3 keys = new Vector3(x, 0f, z);
+
+        // Gamepad left stick (analog, so a gentle push means a gentle hop).
+        Vector3 stick = new Vector3(SafeAxis("Gamepad X"), 0f, SafeAxis("Gamepad Y"));
+        if (stick.sqrMagnitude > keys.sqrMagnitude) return Vector3.ClampMagnitude(stick, 1f);
+        return keys;
+    }
+
+    private static bool axesMissing;
+
+    private static float SafeAxis(string axis)
+    {
+        if (axesMissing) return 0f;
+        try { return Input.GetAxisRaw(axis); }
+        catch (System.ArgumentException) { axesMissing = true; return 0f; }
     }
 
     public static bool StartPressed()
     {
-        return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+        return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)
+            || Input.GetKeyDown(KeyCode.JoystickButton0);
     }
 
     public static bool PausePressed()
     {
-        return Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(Get(Pause));
+        return Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(Get(Pause))
+            || Input.GetKeyDown(KeyCode.JoystickButton7) || Input.GetKeyDown(KeyCode.JoystickButton9);
+    }
+
+    public static bool LaserPressed()
+    {
+        return Input.GetKeyDown(Get(Laser)) || Input.GetKeyDown(KeyCode.JoystickButton2);
     }
 
     public static string KeyName(KeyCode key)

@@ -33,8 +33,8 @@ public class FlyPickUp : MonoBehaviour {
 			GameObject particles = Instantiate(pickupPrefab, transform.position, Quaternion.identity);
 			AudioManager.Register (particles);
 
-			//...update the score
-			ScoreCounter.score++;
+			//...update the score (2 per fly with the shop's "Double flies")
+			ScoreCounter.score += Shop.PointsMultiplier;
 
 			//...and send the fly back to the spawner to reuse later
 			// (this also lowers the count of flies that are out).

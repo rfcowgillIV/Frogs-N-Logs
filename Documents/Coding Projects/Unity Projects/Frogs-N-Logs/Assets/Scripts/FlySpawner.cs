@@ -23,6 +23,9 @@ public class FlySpawner : MonoBehaviour {
 	// Number of flies currently out and about.
 	public static int totalFlies;
 
+	// Flies that are out right now (used by the shop's fly magnet).
+	public static readonly List<GameObject> ActiveFlies = new List<GameObject> ();
+
 	private static FlySpawner instance;
 	private readonly Stack<GameObject> sleepingFlies = new Stack<GameObject> ();
 
@@ -37,6 +40,7 @@ public class FlySpawner : MonoBehaviour {
 
 	void Awake () {
 		instance = this;
+		ActiveFlies.Clear ();
 	}
 
 	void OnDestroy () {
@@ -83,11 +87,13 @@ public class FlySpawner : MonoBehaviour {
 			fly = Instantiate (flyPrefab, position, Quaternion.identity);
 			AudioManager.Register (fly);
 		}
+		ActiveFlies.Add (fly);
 	}
 
 	// Called by FlyPickUp when a fly is eaten.
 	public static void Recycle (GameObject fly) {
 		totalFlies--;
+		ActiveFlies.Remove (fly);
 		if (instance != null) {
 			fly.SetActive (false);
 			instance.sleepingFlies.Push (fly);

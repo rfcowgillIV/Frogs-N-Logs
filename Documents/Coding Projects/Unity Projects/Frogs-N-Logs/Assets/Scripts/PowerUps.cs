@@ -49,6 +49,7 @@ public static class FrogEffects
         {
             case PowerUpType.GoldenFly:
                 ScoreCounter.score += 5 * Shop.PointsMultiplier;
+                Achievements.Unlock("golden");
                 Say("Golden fly! +" + (5 * Shop.PointsMultiplier));
                 break;
             case PowerUpType.SpeedBoost:
@@ -82,6 +83,7 @@ public static class FrogEffects
         if (attacker.GetComponentInParent<BirdMovement>() != null)
         {
             BirdMovement.Stun(seconds);
+            Achievements.CountStun();
         }
         SnakeHazard snake = attacker.GetComponentInParent<SnakeHazard>();
         if (snake != null) snake.Stun(seconds);

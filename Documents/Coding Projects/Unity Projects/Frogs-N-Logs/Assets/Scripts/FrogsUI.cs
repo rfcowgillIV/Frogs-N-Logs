@@ -43,6 +43,8 @@ public class FrogsUI : MonoBehaviour
     private Text levelText;
     private Text statusText;
     private Text toastText;
+    private Button zapButton;
+    private Text zapLabel;
     private float toastUntil;
     private Text titleBestText;
     private Text titleDifficultyText;
@@ -55,7 +57,7 @@ public class FrogsUI : MonoBehaviour
     private readonly Dictionary<string, GameObject> tabs = new Dictionary<string, GameObject>();
     private readonly Dictionary<string, Image> tabButtons = new Dictionary<string, Image>();
     private readonly List<Action> refreshers = new List<Action>();
-    private string currentTab = "Sound";
+    private string currentTab = "Shop";
 
     private bool paused;
     private string capturingAction; // key remapping: which action is waiting for a key
@@ -101,6 +103,7 @@ public class FrogsUI : MonoBehaviour
     {
         Instance = this;
         GameSettings.Changed += RefreshAll;
+        Shop.Changed += RefreshAll;
         GameState.RoundStarted += OnRoundStarted;
         GameState.RoundEnded += OnRoundEnded;
         FrogEffects.Announce += Toast;
@@ -110,6 +113,7 @@ public class FrogsUI : MonoBehaviour
     void OnDestroy()
     {
         GameSettings.Changed -= RefreshAll;
+        Shop.Changed -= RefreshAll;
         GameState.RoundStarted -= OnRoundStarted;
         GameState.RoundEnded -= OnRoundEnded;
         FrogEffects.Announce -= Toast;
@@ -125,6 +129,12 @@ public class FrogsUI : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
         font = FindGameFont();
+        // The level's own score / "Game Over!" text covers the whole screen; make it
+        // click-through so it never blocks taps meant for steering or for these menus.
+        foreach (Graphic g in FindObjectsByType<Graphic>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            g.raycastTarget = false;
+        }
         EnsureEventSystem();
         ScreenFilter.AttachTo(Camera.main);
         BuildCanvas();
@@ -327,6 +337,17 @@ public class FrogsUI : MonoBehaviour
         rt.anchoredPosition = new Vector2(20f, -20f);
         pause.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.35f);
 
+        zapButton = MakeButton(hud.GetComponent<RectTransform>(), "ZAP", 24, () =>
+        {
+            if (GameDirector.Instance != null) GameDirector.Instance.FireLaser();
+        }, 110f, 110f);
+        var zrt = zapButton.GetComponent<RectTransform>();
+        zrt.anchorMin = zrt.anchorMax = new Vector2(1f, 0f);
+        zrt.pivot = new Vector2(1f, 0f);
+        zrt.anchoredPosition = new Vector2(-24f, 24f);
+        zapButton.GetComponent<Image>().color = new Color(0.75f, 0.12f, 0.18f, 0.75f);
+        zapLabel = zapButton.GetComponentInChildren<Text>();
+
         fpsText = Label(hud.GetComponent<RectTransform>(), "", 20, Soft, FontStyle.Bold, TextAnchor.LowerLeft);
         var frt = fpsText.rectTransform;
         frt.anchorMin = frt.anchorMax = new Vector2(0f, 0f);
@@ -407,6 +428,17 @@ public class FrogsUI : MonoBehaviour
         if (FrogEffects.ShieldActive) status += "Lily-pad shield up   ";
         if (BirdMovement.IsStunned) status += "Bird is dizzy!   ";
         statusText.text = status.TrimEnd();
+
+        if (zapButton != null)
+        {
+            bool hasLaser = Shop.HasLaser;
+            if (zapButton.gameObject.activeSelf != hasLaser) zapButton.gameObject.SetActive(hasLaser);
+            if (hasLaser && GameDirector.Instance != null)
+            {
+                float wait = GameDirector.Instance.LaserReadyAt - Time.time;
+                zapLabel.text = wait > 0f ? Mathf.CeilToInt(wait) + "s" : "ZAP";
+            }
+        }
     }
 
     // ---------------------------------------------------------------- game over
@@ -443,10 +475,10 @@ public class FrogsUI : MonoBehaviour
         menuTitle = Label(card, "Paused", 46, Accent, FontStyle.Bold, TextAnchor.MiddleCenter);
 
         RectTransform tabRow = Row("Tabs", card, 8f);
-        foreach (string name in new[] { "Sound", "Graphics", "Controls", "Game" })
+        foreach (string name in new[] { "Shop", "Sound", "Graphics", "Controls", "Game" })
         {
             string captured = name;
-            Button b = MakeButton(tabRow, name, 22, () => ShowTab(captured), 170f, 50f);
+            Button b = MakeButton(tabRow, name, 22, () => ShowTab(captured), 146f, 50f);
             tabButtons[name] = b.GetComponent<Image>();
         }
 
@@ -454,9 +486,10 @@ public class FrogsUI : MonoBehaviour
         var content = new GameObject("Tab Content", typeof(RectTransform));
         content.transform.SetParent(card, false);
         var contentLe = content.AddComponent<LayoutElement>();
-        contentLe.preferredHeight = 330f;
+        contentLe.preferredHeight = 400f;
         contentLe.preferredWidth = 760f;
 
+        tabs["Shop"] = BuildShopTab(content.transform);
         tabs["Sound"] = BuildSoundTab(content.transform);
         tabs["Graphics"] = BuildGraphicsTab(content.transform);
         tabs["Controls"] = BuildControlsTab(content.transform);
@@ -487,6 +520,74 @@ public class FrogsUI : MonoBehaviour
         v.childForceExpandWidth = true;
         v.childForceExpandHeight = false;
         v.padding = new RectOffset(10, 10, 6, 6);
+        return page;
+    }
+
+    private GameObject BuildShopTab(Transform parent)
+    {
+        GameObject page = TabPage(parent, "Shop");
+        RectTransform rt = page.GetComponent<RectTransform>();
+        page.GetComponent<VerticalLayoutGroup>().spacing = 8f;
+
+        Text wallet = Label(rt, "", 24, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+        refreshers.Add(() => wallet.text = "Fly wallet: " + Shop.Wallet + (Shop.Wallet == 1 ? " fly" : " flies")
+                                           + "   <size=16><color=#9EB394>(every fly you eat goes in here)</color></size>");
+
+        var gridGo = new GameObject("Shop Items", typeof(RectTransform));
+        gridGo.transform.SetParent(rt, false);
+        var grid = gridGo.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(370f, 52f);
+        grid.spacing = new Vector2(10f, 5f);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 2;
+        grid.childAlignment = TextAnchor.UpperCenter;
+        gridGo.AddComponent<LayoutElement>().preferredHeight = 6 * 57f;
+
+        foreach (Shop.Item item in Shop.Items)
+        {
+            Shop.Item captured = item;
+            var cell = new GameObject(item.name, typeof(RectTransform));
+            cell.transform.SetParent(gridGo.transform, false);
+            cell.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.05f);
+            var h = cell.AddComponent<HorizontalLayoutGroup>();
+            h.padding = new RectOffset(10, 6, 4, 4);
+            h.spacing = 8f;
+            h.childAlignment = TextAnchor.MiddleLeft;
+            h.childControlWidth = true;
+            h.childControlHeight = true;
+            h.childForceExpandWidth = false;
+            h.childForceExpandHeight = true;
+
+            Text label = Label(cell.transform, "", 19, Soft, FontStyle.Normal, TextAnchor.MiddleLeft);
+            label.GetComponent<LayoutElement>().preferredWidth = 220f;
+            label.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            Button buy = MakeButton(cell.transform, "", 18, () =>
+            {
+                if (Shop.Owns(captured.id) && captured.group != "upgrade") Shop.Equip(captured.id);
+                else if (!Shop.TryBuy(captured.id) && !Shop.IsMaxed(captured)) Toast("Not enough flies yet - keep eating!");
+            }, 124f, 0f);
+            Text buyText = buy.GetComponentInChildren<Text>();
+            Image buyImage = buy.GetComponent<Image>();
+
+            refreshers.Add(() =>
+            {
+                int level = Shop.LevelOf(captured.id);
+                string levels = captured.costs.Length > 1 ? "  (" + level + "/" + captured.costs.Length + ")" : "";
+                label.text = "<b>" + captured.name + "</b>" + levels + "\n<size=15><color=#9EB394>" + captured.description + "</color></size>";
+                bool owned = Shop.Owns(captured.id);
+                if (captured.group == "upgrade")
+                {
+                    buyText.text = Shop.IsMaxed(captured) ? (captured.costs.Length > 1 ? "Maxed" : "Owned") : "Buy " + Shop.NextCost(captured);
+                }
+                else
+                {
+                    buyText.text = owned ? (Shop.IsEquipped(captured.id) ? "Wearing" : "Wear") : "Buy " + Shop.NextCost(captured);
+                }
+                bool affordable = Shop.IsMaxed(captured) || owned || Shop.Wallet >= Shop.NextCost(captured);
+                SetSelected(buyImage, Shop.IsEquipped(captured.id) || (captured.group == "upgrade" && Shop.IsMaxed(captured)));
+                buyText.color = affordable ? Soft : Muted * 0.8f;
+            });
+        }
         return page;
     }
 
@@ -598,6 +699,29 @@ public class FrogsUI : MonoBehaviour
             "Easy: " + GameSettings.GetBestScore(Difficulty.Easy)
             + "      Medium: " + GameSettings.GetBestScore(Difficulty.Medium)
             + "      Hard: " + GameSettings.GetBestScore(Difficulty.Hard));
+
+        Text achTitle = Label(rt, "", 18, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+        RectTransform achRow = Row("Achievements", rt, 20f);
+        achRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.UpperLeft;
+        Text achLeft = Label(achRow, "", 17, Soft, FontStyle.Normal, TextAnchor.UpperLeft);
+        Text achRight = Label(achRow, "", 17, Soft, FontStyle.Normal, TextAnchor.UpperLeft);
+        achLeft.GetComponent<LayoutElement>().preferredWidth = 360f;
+        achRight.GetComponent<LayoutElement>().preferredWidth = 360f;
+        refreshers.Add(() =>
+        {
+            achTitle.text = "ACHIEVEMENTS  " + Achievements.Count + " / " + Achievements.All.Length;
+            string left = "", right = "";
+            for (int i = 0; i < Achievements.All.Length; i++)
+            {
+                string[] a = Achievements.All[i];
+                bool has = Achievements.Has(a[0]);
+                string line = (has ? "<color=#FFD152>+ " + a[1] + "</color>" : "<color=#9EB394>- " + a[1] + "</color>")
+                              + "  <size=14><color=#9EB394>" + a[2] + "</color></size>\n";
+                if (i % 2 == 0) left += line; else right += line;
+            }
+            achLeft.text = left.TrimEnd();
+            achRight.text = right.TrimEnd();
+        });
         return page;
     }
 
