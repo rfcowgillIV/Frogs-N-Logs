@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.PostProcessing;
 using UnityEngine.SceneManagement;
@@ -10,14 +9,16 @@ using UnityStandardAssets.Water;
 // Pause > Graphics has four choices:
 //   Auto   - starts on Medium, watches the frame rate for a few seconds of play, and steps
 //            down to Low if the device is struggling (or up to High on a fast computer).
-//   Low    - no water reflections, shadows or post effects; fewer grass tufts; the web page
-//            draws at normal (not Retina) resolution. Best for phones and older iPads.
+//   Low    - no water reflections, shadows or post effects; fewer grass tufts.
+//            Best for phones and older iPads.
 //   Medium - simple water reflection at a small size, short soft shadows, colour grading.
 //   High   - the full 2017 look: reflective + refractive water, long shadows, everything.
 //
 // Why it was slow before: the web version ran on "High", where the water re-draws the
 // entire scene twice every frame (once for the reflection, once for the refraction), and
-// iPads draw 4x the pixels because of their Retina screens.
+// iPads draw 4x the pixels because of their Retina screens. (The web page now caps that at
+// 1.25x when it loads - see web-fullscreen.py. It's set once, at load, because changing it
+// mid-game made taps land in the wrong place.)
 //
 // Frame rate, meet frog rate.
 public class GraphicsManager : MonoBehaviour
@@ -41,13 +42,6 @@ public class GraphicsManager : MonoBehaviour
 
     // Original terrain settings, so High can restore the full look.
     private readonly Dictionary<Terrain, float[]> terrainDefaults = new Dictionary<Terrain, float[]>();
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-    [DllImport("__Internal")]
-    private static extern void FrogsSetPixelRatio(float ratio);
-    [DllImport("__Internal")]
-    private static extern float FrogsGetDevicePixelRatio();
-#endif
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Create()
@@ -173,7 +167,6 @@ public class GraphicsManager : MonoBehaviour
         }
 
         ApplyToScene(tier);
-        ApplyPixelRatio(tier);
     }
 
     private void ApplyToScene(GraphicsTier tier)
@@ -229,17 +222,5 @@ public class GraphicsManager : MonoBehaviour
             terrain.treeDistance = d[4] * scale;
             terrain.drawInstanced = true; // one batch for the ground instead of many
         }
-    }
-
-    // On the web, how many real screen pixels to draw per CSS pixel.
-    // Retina iPads/Macs report 2, which means 4x the work; we cap it per tier.
-    private static void ApplyPixelRatio(GraphicsTier tier)
-    {
-#if UNITY_WEBGL && !UNITY_EDITOR
-        float device = 1f;
-        try { device = FrogsGetDevicePixelRatio(); } catch { }
-        float cap = tier == GraphicsTier.Low ? 1f : tier == GraphicsTier.Medium ? 1.25f : 2f;
-        try { FrogsSetPixelRatio(Mathf.Min(device, cap)); } catch { }
-#endif
     }
 }

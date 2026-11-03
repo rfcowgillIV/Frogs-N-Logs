@@ -19,6 +19,7 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -726,6 +727,53 @@ namespace FrogsNLogs.Tests
             StringAssert.Contains("Top hat", text);
             yield return Screenshot("12-shop");
             FindButton("Resume").onClick.Invoke();
+        }
+
+        // ---------- Nov 2026: real clicks (found in the live test) ----------
+
+        // A pretend mouse that reports "no mouse and no touchscreen", like some browsers do,
+        // and clicks wherever we tell it to.
+        private class FakeBrowserMouse : BaseInput
+        {
+            public Vector2 position;
+            public bool down, up, held;
+            public override bool mousePresent { get { return false; } }
+            public override bool touchSupported { get { return false; } }
+            public override int touchCount { get { return 0; } }
+            public override Vector2 mousePosition { get { return position; } }
+            public override Vector2 mouseScrollDelta { get { return Vector2.zero; } }
+            public override bool GetMouseButtonDown(int button) { return button == 0 && down; }
+            public override bool GetMouseButtonUp(int button) { return button == 0 && up; }
+            public override bool GetMouseButton(int button) { return button == 0 && held; }
+            public override float GetAxisRaw(string axisName) { return 0f; }
+            public override bool GetButtonDown(string buttonName) { return false; }
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T14_ClickingPlayReallyWorks()
+        {
+            yield return LoadLevel();
+            Button play = FindButton("PLAY");
+            var module = Object.FindFirstObjectByType<StandaloneInputModule>();
+            Assert.IsNotNull(module, "No input module for the menus");
+            var mouse = module.gameObject.AddComponent<FakeBrowserMouse>();
+            module.inputOverride = mouse;
+
+            // Aim at the middle of the Play button (the menus draw straight onto the screen).
+            Vector3[] corners = new Vector3[4];
+            play.GetComponent<RectTransform>().GetWorldCorners(corners);
+            mouse.position = (corners[0] + corners[2]) * 0.5f;
+            yield return null;
+
+            mouse.down = true; mouse.held = true;
+            yield return null;
+            mouse.down = false; mouse.up = true; mouse.held = false;
+            yield return null;
+            mouse.up = false;
+            yield return null;
+
+            module.inputOverride = null;
+            Assert.IsTrue(((Behaviour)FindOne("PlayerMovement")).enabled, "A real click on Play should start the game");
         }
     }
 }

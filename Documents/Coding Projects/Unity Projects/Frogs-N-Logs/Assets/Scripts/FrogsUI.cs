@@ -168,10 +168,16 @@ public class FrogsUI : MonoBehaviour
 
     private static void EnsureEventSystem()
     {
-        if (FindFirstObjectByType<EventSystem>() != null) return;
-        var es = new GameObject("EventSystem");
-        es.AddComponent<EventSystem>();
-        es.AddComponent<StandaloneInputModule>();
+        EventSystem existing = FindFirstObjectByType<EventSystem>();
+        GameObject es = existing != null ? existing.gameObject : new GameObject("EventSystem");
+        if (existing == null) es.AddComponent<EventSystem>();
+        // FIX (Nov 2026, found in the live play test): use our click handler, which never
+        // ignores clicks/taps (see FrogsInputModule.cs), instead of Unity's standard one.
+        foreach (BaseInputModule other in es.GetComponents<BaseInputModule>())
+        {
+            if (!(other is FrogsInputModule)) other.enabled = false;
+        }
+        if (es.GetComponent<FrogsInputModule>() == null) es.AddComponent<FrogsInputModule>();
     }
 
     private void BuildCanvas()
