@@ -310,13 +310,17 @@ namespace FrogsNLogs.Tests
             Assert.IsNotNull(frogCollider, "Frog has no collider");
 
             // Deliver the "frog touched fly" event directly, the same message Unity physics sends.
+            Vector3 flyWasAt = fly.transform.position;
             fly.SendMessage("OnTriggerEnter", frogCollider);
             yield return null;
             yield return null;
 
             Assert.AreEqual(1, (int)GetStatic("ScoreCounter", "score"), "Score should be exactly 1 after one fly");
-            // Nov 2026: eaten flies are hidden and reused later instead of destroyed.
-            Assert.IsTrue(fly == null || !fly.gameObject.activeInHierarchy, "Eaten fly should be removed");
+            // Nov 2026: eaten flies are reused - it either hides, or has already popped up
+            // somewhere new as the replacement fly.
+            bool gone = fly == null || !fly.gameObject.activeInHierarchy
+                        || Vector3.Distance(flyWasAt, fly.transform.position) > 0.5f;
+            Assert.IsTrue(gone, "Eaten fly should be removed from where it was");
             StringAssert.Contains("1 Flies", ScoreText());
             Assert.GreaterOrEqual(FindAll("FlyPickUp").Length, 12, "A new fly should spawn to replace it");
 
