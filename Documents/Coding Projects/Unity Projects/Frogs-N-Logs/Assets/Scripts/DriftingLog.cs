@@ -50,10 +50,8 @@ public class DriftingLog : MonoBehaviour
 
         // The bird (and snake) path around it.
         var obstacle = root.AddComponent<NavMeshObstacle>();
-        obstacle.shape = NavMeshObstacleShape.Capsule;
-        obstacle.direction = 0;
-        obstacle.height = 4.4f;
-        obstacle.radius = 0.5f;
+        obstacle.shape = NavMeshObstacleShape.Box; // boxes follow the log's rotation
+        obstacle.size = new Vector3(4.4f, 1f, 1f);
         obstacle.carving = true;
         obstacle.carveOnlyStationary = false;
 
