@@ -7,7 +7,7 @@ from scrolling or zooming the page, and gives the tab a friendlier title.
 
 Nov 2026 (speed): Retina screens (iPads, newer Macs and phones) report 2-3 screen pixels per
 CSS pixel, so the game was drawing 4-9x as many pixels as it needed to. The page now starts at
-no more than 1.25x; the game's Graphics setting can raise or lower it (see FrogsWeb.jslib).
+no more than 1.25x; it is set once at load (changing it mid-game made taps land in the wrong place).
 It also gets a Frogs-N-Logs loading screen instead of the Unity logo.
 Usage: python3 web-fullscreen.py path/to/index.html
 """

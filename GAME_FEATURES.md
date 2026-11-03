@@ -8,7 +8,7 @@ play tests on GitHub before going live at **https://rfcowgilliv.github.io/Frogs-
 |---|---|---|
 | **Lag fix** | The frog moves at a steady speed the moment you press a key and stops when you let go. (In 2017 it only moved when its hop animation pushed it, and finished each hop before stopping.) | `PlayerMovement.cs`, `Animators/PlayerController.controller` |
 | **Graphics quality** | Auto / Low / Medium / High. Auto watches the frame rate for ~5 s of play and picks for your device. Low = simple water, no shadows or post effects; Medium = small reflection, short shadows; High = the full 2017 look. | `GraphicsManager.cs` |
-| **Sharper-but-lighter on Retina** | iPads/Macs were drawing 4x the pixels. The page now caps the pixel ratio (1x Low, 1.25x Medium, 2x High). | `.github/scripts/web-fullscreen.py`, `Plugins/WebGL/FrogsWeb.jslib` |
+| **Sharper-but-lighter on Retina** | iPads/Macs were drawing 4x the pixels. The page caps the pixel ratio at 1.25x when it loads. | `.github/scripts/web-fullscreen.py` |
 | **Smaller download** | Web textures capped at 1024 px (masks 512), mono sound effects, code stripping, unused packages removed (in-app purchases, analytics, collab, timeline). Scenery is batched. | `Editor/BuildOptimizations.cs` |
 | **Flies are reused** | Eaten flies hide and pop up elsewhere instead of being destroyed and re-created (no mid-game hitches). | `FlySpawner.cs`, `FlyPickUp.cs` |
 | **Title screen** | How to play with keyboard **and** touch/mouse, difficulty, best score, Play. | `FrogsUI.cs` |

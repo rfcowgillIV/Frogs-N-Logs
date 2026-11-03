@@ -168,10 +168,17 @@ public class FrogsUI : MonoBehaviour
 
     private static void EnsureEventSystem()
     {
-        if (FindFirstObjectByType<EventSystem>() != null) return;
-        var es = new GameObject("EventSystem");
-        es.AddComponent<EventSystem>();
-        es.AddComponent<StandaloneInputModule>();
+        EventSystem existing = FindFirstObjectByType<EventSystem>();
+        GameObject es = existing != null ? existing.gameObject : new GameObject("EventSystem");
+        if (existing == null) es.AddComponent<EventSystem>();
+        StandaloneInputModule module = es.GetComponent<StandaloneInputModule>();
+        if (module == null) module = es.AddComponent<StandaloneInputModule>();
+        // FIX (Nov 2026, found in the live play test): Unity only switches its button-click
+        // handling on if the browser reports a mouse or a touchscreen, and some browsers
+        // report neither - so taps and clicks on the menus did nothing. Always on now.
+#pragma warning disable 618
+        module.forceModuleActive = true;
+#pragma warning restore 618
     }
 
     private void BuildCanvas()
