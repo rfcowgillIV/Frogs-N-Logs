@@ -43,6 +43,7 @@ public class PlayerMovement : MonoBehaviour {
 	public static bool ClassicRootMotion;
 
 	public float CurrentSpeed { get; private set; }
+	private Vector3 velocity;
 
 	void Start () {
 		//Gather the components from the Player GameObject
@@ -56,6 +57,7 @@ public class PlayerMovement : MonoBehaviour {
 			playerRigidbody.linearVelocity = new Vector3 (0f, playerRigidbody.linearVelocity.y, 0f);
 		}
 		CurrentSpeed = 0f;
+		velocity = Vector3.zero;
 		if (playerAnimator != null) {
 			playerAnimator.SetFloat ("Speed", 0f);
 		}
@@ -99,12 +101,17 @@ public class PlayerMovement : MonoBehaviour {
 
 		if (!ClassicRootMotion) {
 			// Ease toward the target speed so starts and stops feel snappy but not robotic.
-			Vector3 current = playerRigidbody.linearVelocity;
-			Vector3 flat = new Vector3 (current.x, 0f, current.z);
+			// The frog is moved directly (like the old hop did) rather than pushed with physics
+			// forces: its body sits slightly in the ground, and ground friction would otherwise
+			// hold it in place.
 			Vector3 target = movement * hopSpeed * SpeedMultiplier;
-			flat = Vector3.MoveTowards (flat, target, acceleration * Time.fixedDeltaTime);
-			playerRigidbody.linearVelocity = new Vector3 (flat.x, current.y, flat.z);
-			CurrentSpeed = flat.magnitude;
+			velocity = Vector3.MoveTowards (velocity, target, acceleration * Time.fixedDeltaTime);
+			if (velocity != Vector3.zero) {
+				playerRigidbody.MovePosition (playerRigidbody.position + velocity * Time.fixedDeltaTime);
+			}
+			// No leftover sliding from bumps.
+			playerRigidbody.linearVelocity = new Vector3 (0f, playerRigidbody.linearVelocity.y, 0f);
+			CurrentSpeed = velocity.magnitude;
 		}
 
 		//if the player is steering...
