@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,7 +19,8 @@ public class PlayerHealth : MonoBehaviour {
 			alive = false;
 
 			//create the pickup particles
-			Instantiate(pickupPrefab, transform.position, Quaternion.identity);
+			GameObject particles = Instantiate(pickupPrefab, transform.position, Quaternion.identity);
+			AudioManager.Register (particles);
 
 		}
 	}
