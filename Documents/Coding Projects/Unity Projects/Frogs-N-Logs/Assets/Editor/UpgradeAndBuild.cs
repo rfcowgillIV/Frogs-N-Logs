@@ -61,6 +61,9 @@ namespace FrogsNLogs.EditorTools
                 PlayerSettings.WebGL.dataCaching = true;
                 PlayerSettings.productName = "Frogs-N-Logs";
 
+                // Nov 2026: smaller textures/sounds, code stripping (see BuildOptimizations.cs).
+                BuildOptimizations.ApplyForWeb();
+
                 string[] scenes = EditorBuildSettings.scenes
                     .Where(s => s.enabled && !string.IsNullOrEmpty(s.path))
                     .Select(s => s.path)

@@ -70,6 +70,63 @@ namespace FrogsNLogs.Tests
                 .Invoke(obj, null);
         }
 
+        private static object GetStaticProp(string typeName, string prop)
+        {
+            return GameType(typeName).GetProperty(prop, BindingFlags.Public | BindingFlags.Static).GetValue(null);
+        }
+
+        private static void SetStaticProp(string typeName, string prop, object value)
+        {
+            GameType(typeName).GetProperty(prop, BindingFlags.Public | BindingFlags.Static).SetValue(null, value);
+        }
+
+        private static void SetStaticField(string typeName, string field, object value)
+        {
+            GameType(typeName).GetField(field, BindingFlags.Public | BindingFlags.Static).SetValue(null, value);
+        }
+
+        private static object Enum(string typeName, string value)
+        {
+            return System.Enum.Parse(GameType(typeName), value);
+        }
+
+        // Fresh settings for every test, so one test's choices never leak into the next.
+        [SetUp]
+        public void ResetSettings()
+        {
+            PlayerPrefs.DeleteAll();
+            Time.timeScale = 1f;
+            SetStaticField("PlayerMovement", "TestMoveOverride", null);
+            SetStaticField("PlayerMovement", "ClassicRootMotion", false);
+        }
+
+        [TearDown]
+        public void CleanUp()
+        {
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+            SetStaticField("PlayerMovement", "TestMoveOverride", null);
+            SetStaticField("PlayerMovement", "ClassicRootMotion", false);
+            PlayerPrefs.DeleteAll();
+        }
+
+        private static Button FindButton(string label)
+        {
+            foreach (Button b in Object.FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                Text t = b.GetComponentInChildren<Text>();
+                if (t != null && t.text == label) return b;
+            }
+            Assert.Fail("No button labelled '" + label + "' on screen");
+            return null;
+        }
+
+        private static string AllVisibleText()
+        {
+            return string.Join("\n", Object.FindObjectsByType<Text>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                .Select(t => t.text));
+        }
+
         private static string ScoreText()
         {
             return FindOne("ScoreCounter").GetComponent<Text>().text;
@@ -117,9 +174,23 @@ namespace FrogsNLogs.Tests
                 const int w = 1280, h = 720;
                 var rt = new RenderTexture(w, h, 24);
                 RenderTexture previous = cam.targetTexture;
+
+                // Nov 2026: the menus draw straight onto the screen, which a manual camera render
+                // doesn't include. Briefly attach them to the camera so they show up in the shot.
+                Canvas ui = null;
+                GameObject uiGo = GameObject.Find("Frogs UI Canvas");
+                if (uiGo != null) ui = uiGo.GetComponent<Canvas>();
+                if (ui != null)
+                {
+                    ui.renderMode = RenderMode.ScreenSpaceCamera;
+                    ui.worldCamera = cam;
+                    ui.planeDistance = cam.nearClipPlane + 0.5f;
+                }
                 cam.targetTexture = rt;
+                Canvas.ForceUpdateCanvases();
                 cam.Render();
                 cam.targetTexture = previous;
+                if (ui != null) ui.renderMode = RenderMode.ScreenSpaceOverlay;
 
                 RenderTexture.active = rt;
                 var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
@@ -239,12 +310,17 @@ namespace FrogsNLogs.Tests
             Assert.IsNotNull(frogCollider, "Frog has no collider");
 
             // Deliver the "frog touched fly" event directly, the same message Unity physics sends.
+            Vector3 flyWasAt = fly.transform.position;
             fly.SendMessage("OnTriggerEnter", frogCollider);
             yield return null;
             yield return null;
 
             Assert.AreEqual(1, (int)GetStatic("ScoreCounter", "score"), "Score should be exactly 1 after one fly");
-            Assert.IsTrue(fly == null, "Eaten fly should be removed");
+            // Nov 2026: eaten flies are reused - it either hides, or has already popped up
+            // somewhere new as the replacement fly.
+            bool gone = fly == null || !fly.gameObject.activeInHierarchy
+                        || Vector3.Distance(flyWasAt, fly.transform.position) > 0.5f;
+            Assert.IsTrue(gone, "Eaten fly should be removed from where it was");
             StringAssert.Contains("1 Flies", ScoreText());
             Assert.GreaterOrEqual(FindAll("FlyPickUp").Length, 12, "A new fly should spawn to replace it");
 
@@ -284,6 +360,9 @@ namespace FrogsNLogs.Tests
             yield return null;
             yield return null;
             Assert.AreEqual("Game Over!", GameStateText(), "Game Over text should show");
+            int best = (int)GameType("GameSettings").GetMethod("GetBestScore").Invoke(null, new[] { Enum("Difficulty", "Medium") });
+            Assert.AreEqual(5, best, "The 5-fly score should be saved as the best on Medium");
+            StringAssert.Contains("New best!", AllVisibleText(), "Game over should celebrate a new best");
             yield return Screenshot("04-game-over");
 
             // Restart happens after 3 seconds. GameState reloads the level by its build-list
@@ -318,6 +397,335 @@ namespace FrogsNLogs.Tests
             Assert.AreNotEqual("Game Over!", GameStateText(), "Game Over text should clear after restart");
 
             Assert.IsTrue(caughtNaturally, "Restart works, but the bird never caught the frog on its own within 30s");
+        }
+
+        // ---------- Nov 2026: menus, controls feel, pause, difficulty ----------
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T5_TitleScreenExplainsBothControlStylesAndDifficulty()
+        {
+            yield return LoadLevel();
+            GameObject title = GameObject.Find("Title Screen");
+            Assert.IsNotNull(title, "Title screen should be showing when the level loads");
+
+            string text = AllVisibleText();
+            StringAssert.Contains("FROGS-N-LOGS", text);
+            StringAssert.Contains("KEYBOARD", text, "Title should explain keyboard controls");
+            StringAssert.Contains("TOUCH & MOUSE", text, "Title should explain touch/mouse controls");
+            yield return Screenshot("05-title-screen");
+
+            // Picking Easy on the title screen saves it.
+            FindButton("Easy").onClick.Invoke();
+            yield return null;
+            Assert.AreEqual(Enum("Difficulty", "Easy"), GetStaticProp("GameSettings", "Difficulty"));
+
+            // Play starts the round and hides the title.
+            FindButton("PLAY").onClick.Invoke();
+            yield return null;
+            Assert.IsTrue(((Behaviour)FindOne("PlayerMovement")).enabled, "Play button should start the game");
+            Assert.IsNull(GameObject.Find("Title Screen"), "Title should hide once the game starts");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T6_FrogRespondsInstantlyAndStopsWhenReleased()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Component frog = FindOne("PlayerMovement");
+            Transform t = frog.transform;
+
+            // Keep the bird out of this one so it can't catch the frog mid-measurement.
+            Behaviour birdBrain = (Behaviour)FindOne("BirdMovement");
+            birdBrain.enabled = false;
+            birdBrain.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+
+            // Hold "right" for a quarter of a second.
+            Vector3 start = t.position;
+            SetStaticField("PlayerMovement", "TestMoveOverride", (Vector3?)Vector3.right);
+            yield return new WaitForSeconds(0.25f);
+            float movedWhileHeld = Vector3.Distance(start, t.position);
+
+            // Let go: the frog should stop almost straight away (no finishing the hop).
+            SetStaticField("PlayerMovement", "TestMoveOverride", null);
+            yield return new WaitForSeconds(0.15f);
+            Vector3 released = t.position;
+            yield return new WaitForSeconds(0.25f);
+            float driftAfterStop = Vector3.Distance(released, t.position);
+
+            Debug.Log("[Playtest] Frog moved " + movedWhileHeld.ToString("0.00") + "m in 0.25s held, then drifted "
+                      + driftAfterStop.ToString("0.00") + "m after letting go");
+            Assert.Greater(movedWhileHeld, 0.5f, "Frog should get moving within a quarter second");
+            Assert.Less(driftAfterStop, 0.1f, "Frog should stop when the key is released");
+
+            // For tuning: how fast was the 2017 hop-driven movement? (logged only)
+            SetStaticField("PlayerMovement", "ClassicRootMotion", true);
+            SetStaticField("PlayerMovement", "TestMoveOverride", (Vector3?)Vector3.left);
+            Vector3 classicStart = t.position;
+            yield return new WaitForSeconds(2f);
+            float classicSpeed = Vector3.Distance(classicStart, t.position) / 2f;
+            Debug.Log("[Playtest] 2017 hop speed for comparison: " + classicSpeed.ToString("0.00") + " m/s");
+            Debug.Log("::notice::2017 hop speed " + classicSpeed.ToString("0.00") + " m/s; new steady speed held 0.25s moved " + movedWhileHeld.ToString("0.00") + " m");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T7_PauseFreezesEverythingAndResumes()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            yield return new WaitForSeconds(0.5f);
+
+            object ui = GetStaticProp("FrogsUI", "Instance");
+            Assert.IsNotNull(ui, "Menus didn't load");
+            ui.GetType().GetMethod("OpenMenu").Invoke(ui, new object[] { true });
+            Assert.AreEqual(0f, Time.timeScale, "Pausing should freeze the game");
+            StringAssert.Contains("Paused", AllVisibleText());
+
+            Transform bird = FindOne("BirdMovement").transform;
+            Vector3 frozen = bird.position;
+            yield return new WaitForSecondsRealtime(0.5f);
+            Assert.Less(Vector3.Distance(frozen, bird.position), 0.01f, "Bird should not move while paused");
+
+            // Every settings tab opens without errors.
+            foreach (string tab in new[] { "Sound", "Graphics", "Controls", "Game" })
+            {
+                FindButton(tab).onClick.Invoke();
+                yield return null;
+            }
+            FindButton("Graphics").onClick.Invoke();
+            yield return null;
+            yield return Screenshot("06-pause-menu");
+
+            FindButton("Resume").onClick.Invoke();
+            yield return null;
+            Assert.AreEqual(1f, Time.timeScale, "Resume should unfreeze the game");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T8_DifficultyChangesTheBirdAndTheFlies()
+        {
+            SetStaticProp("GameSettings", "Difficulty", Enum("Difficulty", "Hard"));
+            yield return LoadLevel();
+            yield return StartGame();
+            yield return new WaitForSeconds(0.3f);
+
+            var agent = FindOne("BirdMovement").GetComponent<UnityEngine.AI.NavMeshAgent>();
+            float hardSpeed = agent.speed;
+            int hardFlies = FindAll("FlyPickUp").Length;
+
+            SetStaticProp("GameSettings", "Difficulty", Enum("Difficulty", "Easy"));
+            yield return null;
+            yield return null;
+            float easySpeed = agent.speed;
+            Debug.Log("[Playtest] Bird speed Hard " + hardSpeed.ToString("0.00") + " vs Easy " + easySpeed.ToString("0.00")
+                      + "; flies on Hard: " + hardFlies);
+            Assert.Greater(hardSpeed, easySpeed * 1.5f, "Hard bird should be much faster than Easy");
+            Assert.Less(hardFlies, 12, "Hard should have fewer flies than the classic 12");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T9_SettingsAreRememberedAndApplied()
+        {
+            yield return LoadLevel();
+            SetStaticProp("GameSettings", "MusicOn", false);
+            SetStaticProp("GameSettings", "EffectsVolume", 0.5f);
+            SetStaticProp("GameSettings", "Filter", Enum("ScreenFilterMode", "Night"));
+            SetStaticProp("GameSettings", "Graphics", Enum("GraphicsTier", "Low"));
+            yield return null;
+
+            // Saved...
+            Assert.AreEqual(false, GetStaticProp("GameSettings", "MusicOn"));
+            Assert.AreEqual(0.5f, (float)GetStaticProp("GameSettings", "EffectsVolume"), 0.001f);
+            // ...and applied: music sources silent, filter on the camera, Low graphics active.
+            foreach (AudioSource source in Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+            {
+                bool music = (bool)GameType("AudioManager").GetMethod("IsMusic").Invoke(null, new object[] { source });
+                if (music) Assert.AreEqual(0f, source.volume, 0.001f, "Music should be muted: " + source.name);
+            }
+            Behaviour filter = (Behaviour)Camera.main.GetComponent(GameType("ScreenFilter"));
+            Assert.IsNotNull(filter, "Filter should be attached to the camera");
+            Assert.IsTrue(filter.enabled, "Night filter should be on");
+            Assert.AreEqual(Enum("GraphicsTier", "Low"), GetStaticProp("GraphicsManager", "ActiveTier"));
+            yield return Screenshot("07-night-filter-low");
+
+            // Changing a key binding sticks (and arrows still work as a backup).
+            GameType("KeyBindings").GetMethod("Set").Invoke(null, new object[] { "up", KeyCode.I });
+            Assert.AreEqual(KeyCode.I, GameType("KeyBindings").GetMethod("Get").Invoke(null, new object[] { "up" }));
+        }
+
+        // ---------- Nov 2026 round 2: levels, hazards, power-ups ----------
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T10_FlyGoalsUnlockTheSwampAndNightWithTheirHazards()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            // Keep the bird still so it can't end the run while we look around.
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+
+            object levels = GetStaticProp("LevelManager", "Instance");
+            Assert.IsNotNull(levels, "Level manager didn't load");
+            Func<int> level = () => (int)levels.GetType().GetProperty("Level").GetValue(levels);
+            Assert.AreEqual(1, level(), "Should start on Level 1 (The Pond)");
+            StringAssert.Contains("Level 1", AllVisibleText(), "HUD should show the level");
+
+            // Medium: 10 flies opens the Swamp.
+            SetStaticField("ScoreCounter", "score", 10);
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(2, level(), "10 flies should move us to the Swamp");
+            Assert.IsTrue(RenderSettings.fog, "The Swamp should be foggy");
+            Assert.IsNotNull(GameObject.Find("Snake"), "A snake should appear in the Swamp");
+            Assert.IsNotNull(GameObject.Find("Drifting Log"), "Logs should drift through the Swamp");
+            yield return Screenshot("08-the-swamp");
+
+            // 24 flies: Night, and the bird is faster.
+            SetStaticField("ScoreCounter", "score", 24);
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(3, level(), "24 flies should bring on the Night");
+            Assert.GreaterOrEqual((float)GetStatic("BirdMovement", "SpeedMultiplier"), 1.15f, "The bird should be faster at night");
+            yield return Screenshot("09-night");
+        }
+
+        private static Component SpawnPowerUp(string type)
+        {
+            Component spawner = FindOne("PowerUpSpawner");
+            MethodInfo spawn = spawner.GetType().GetMethod("Spawn");
+            var go = (GameObject)spawn.Invoke(spawner, new[] { Enum("PowerUpType", type) });
+            Assert.IsNotNull(go, "Couldn't place a " + type);
+            Component pickup = go.GetComponentInChildren(GameType("PowerUpPickup"));
+            Assert.IsNotNull(pickup, type + " has no pickup");
+            return pickup;
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T11_PowerUpsGoldenFlySpeedBoostAndShield()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+            Collider frogCollider = GameObject.FindWithTag("Player").GetComponentInChildren<Collider>();
+
+            // Golden fly: +5.
+            Component golden = SpawnPowerUp("GoldenFly");
+            yield return null;
+            yield return Screenshot("10-golden-fly");
+            int before = (int)GetStatic("ScoreCounter", "score");
+            golden.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.AreEqual(before + 5, (int)GetStatic("ScoreCounter", "score"), "Golden fly should be worth 5");
+
+            // Speed boost: faster frog for a few seconds.
+            Component orb = SpawnPowerUp("SpeedBoost");
+            orb.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            yield return null;
+            Assert.Greater((float)GetStatic("PlayerMovement", "SpeedMultiplier"), 1.5f, "Speed boost should speed the frog up");
+
+            // Shield: the next catch pops the shield instead of ending the game.
+            Component pad = SpawnPowerUp("Shield");
+            pad.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.IsTrue((bool)GameType("FrogEffects").GetField("ShieldActive").GetValue(null), "Shield should be up");
+
+            Component health = FindOne("PlayerHealth");
+            Collider birdCollider = GameObject.FindWithTag("Enemy").GetComponentInChildren<Collider>();
+            health.SendMessage("OnTriggerEnter", birdCollider);
+            yield return null;
+            Assert.IsTrue((bool)GetField(health, "alive"), "Shield should save the frog");
+            Assert.IsFalse((bool)GameType("FrogEffects").GetField("ShieldActive").GetValue(null), "Shield should be used up");
+            Assert.IsTrue((bool)GetStaticProp("BirdMovement", "IsStunned"), "The bird should be dizzy after hitting the shield");
+        }
+
+        // ---------- Nov 2026 round 3: shop, laser, looks, achievements ----------
+
+        private static bool Buy(string id)
+        {
+            return (bool)GameType("Shop").GetMethod("TryBuy").Invoke(null, new object[] { id });
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T12_ShopUpgradesWork()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            Collider frogCollider = GameObject.FindWithTag("Player").GetComponentInChildren<Collider>();
+
+            // Eating flies fills the wallet.
+            Component fly = FindOne("FlyPickUp");
+            fly.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            yield return null;
+            Assert.GreaterOrEqual((int)GetStaticProp("Shop", "Wallet"), 1, "Eating a fly should add to the fly wallet");
+
+            // Can't buy what you can't afford...
+            Assert.IsFalse(Buy("double"), "Shouldn't be able to buy Double flies with 1 fly");
+            // ...but with a full wallet everything works.
+            PlayerPrefs.SetInt("FNL.wallet", 2000);
+            Assert.IsTrue(Buy("speed"), "Buy Strong legs");
+            Assert.IsTrue(Buy("magnet") && Buy("magnet") && Buy("magnet"), "Buy all 3 magnet levels");
+            Assert.IsTrue(Buy("double"), "Buy Double flies");
+            Assert.IsTrue(Buy("laser"), "Buy Laser eyes");
+            Assert.IsTrue(Buy("skin.gold"), "Buy Golden frog");
+            Assert.IsTrue(Buy("hat.crown"), "Buy Crown");
+            yield return null;
+            yield return null;
+
+            Assert.Greater((float)GetStatic("PlayerMovement", "SpeedMultiplier"), 1.05f, "Strong legs should speed the frog up");
+            Assert.IsNotNull(GameObject.Find("Frog Hat"), "The crown should be on the frog");
+
+            // Double flies: next fly is worth 2.
+            int before = (int)GetStatic("ScoreCounter", "score");
+            Component another = FindOne("FlyPickUp");
+            another.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.AreEqual(before + 2, (int)GetStatic("ScoreCounter", "score"), "Double flies should give 2 per fly");
+
+            // Fly magnet: a fly 5 m away drifts closer.
+            Component magnetFly = FindOne("FlyPickUp");
+            Transform frog = GameObject.FindWithTag("Player").transform;
+            magnetFly.transform.position = frog.position + new Vector3(5f, 0.8f, 0f);
+            float startDistance = Vector3.Distance(Flat(magnetFly.transform.position), Flat(frog.position));
+            yield return new WaitForSeconds(0.6f);
+            float endDistance = magnetFly == null || !magnetFly.gameObject.activeInHierarchy ? 0f
+                : Vector3.Distance(Flat(magnetFly.transform.position), Flat(frog.position));
+            Assert.Less(endDistance, startDistance - 0.5f, "Fly magnet should pull nearby flies in");
+
+            // Laser eyes: zap the bird when it's in range.
+            bird.transform.position = frog.position + new Vector3(0f, 0f, 8f);
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().Warp(bird.transform.position);
+            object director = GetStaticProp("GameDirector", "Instance");
+            bool hit = (bool)director.GetType().GetMethod("FireLaser").Invoke(director, null);
+            yield return null;
+            Assert.IsTrue(hit, "Laser should hit a bird 8 m away");
+            Assert.IsTrue((bool)GetStaticProp("BirdMovement", "IsStunned"), "Zapped bird should be dizzy");
+            yield return Screenshot("11-shop-upgrades-zap");
+
+            Assert.IsTrue((bool)GameType("Achievements").GetMethod("Has").Invoke(null, new object[] { "shopper" }), "Buying should unlock Shopper");
+            Assert.IsTrue((bool)GameType("Achievements").GetMethod("Has").Invoke(null, new object[] { "first" }), "Eating a fly should unlock First bite");
+        }
+
+        private static Vector3 Flat(Vector3 v) { return new Vector3(v.x, 0f, v.z); }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T13_ShopTabShowsInThePauseMenu()
+        {
+            PlayerPrefs.SetInt("FNL.wallet", 75);
+            yield return LoadLevel();
+            yield return StartGame();
+            object ui = GetStaticProp("FrogsUI", "Instance");
+            ui.GetType().GetMethod("OpenMenu").Invoke(ui, new object[] { true });
+            FindButton("Shop").onClick.Invoke();
+            yield return null;
+            string text = AllVisibleText();
+            StringAssert.Contains("Fly wallet: 75", text);
+            StringAssert.Contains("Laser eyes", text);
+            StringAssert.Contains("Top hat", text);
+            yield return Screenshot("12-shop");
+            FindButton("Resume").onClick.Invoke();
         }
     }
 }

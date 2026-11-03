@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -26,6 +27,37 @@ public class GameState : MonoBehaviour {
 	private PlayerMovement playerMovement;
 	private PlayerHealth playerHealth;
 
+	// ---- Nov 2026: hooks for the title screen, pause menu and high scores (FrogsUI.cs) ----
+
+	// The GameState in the currently loaded level.
+	public static GameState Current { get; private set; }
+
+	// Fired when a round starts / when the frog is caught (with the final score).
+	public static event Action RoundStarted;
+	public static event Action<int, bool> RoundEnded; // (score, isNewBest)
+
+	// Set by the menus. While a menu is open, Space doesn't start the game underneath it.
+	public static bool MenuOpen;
+
+	public bool IsPlaying { get { return gameStarted && !gameOver; } }
+	public bool IsOver { get { return gameOver; } }
+	public bool HasStarted { get { return gameStarted || gameOver; } }
+
+	void Awake () {
+		Current = this;
+		MenuOpen = false;
+		// Temporary effects (power-ups, stuns) never carry over into a new round.
+		PlayerMovement.SpeedMultiplier = 1f;
+		BirdMovement.SpeedMultiplier = 1f;
+		BirdMovement.StunnedUntil = 0f;
+		FrogEffects.ResetRound ();
+	}
+
+	void OnDestroy () {
+		if (Current == this) {
+			Current = null;
+		}
+	}
 
 	// Use this for initialization
 	void Start () {
@@ -33,9 +65,11 @@ public class GameState : MonoBehaviour {
 		// (It used to be hidden for the keyboard-only version.)
 		Cursor.visible = true;
 
-		// 2026: tapping/clicking also starts the game, so say so on the title text.
+		// Nov 2026: the title screen (FrogsUI) now explains the controls, so this text
+		// stays hidden until it's needed for "Game Over!".
 		if (gameStateText != null) {
-			gameStateText.text = "Tap or Space to Start";
+			gameStateText.text = "Tap Play or press Space";
+			gameStateText.color = Color.clear;
 		}
 
 		playerMovement = player.GetComponent<PlayerMovement> ();
@@ -50,12 +84,13 @@ public class GameState : MonoBehaviour {
 		//prevent the follow camera from moving to its game position
 		followCamera.enabled = false;
 	}
-	
+
 	// Update is called once per frame
 	void Update () {
-		//if the game has not started and the player presses the space bar...
-		// (2026: a tap or mouse click works too - see PointerInput.cs)
-		if (gameStarted == false && gameOver == false && (Input.GetKeyUp (KeyCode.Space) || PointerInput.WasTapped)) {
+		//if the game has not started and the player presses Space/Enter...
+		// (Nov 2026: tapping now goes through the title screen's Play button instead, so a tap
+		// on the difficulty buttons doesn't start the game by accident.)
+		if (gameStarted == false && gameOver == false && !MenuOpen && KeyBindings.StartPressed ()) {
 			//... then start the game.
 			StartGame();
 		}
@@ -80,6 +115,14 @@ public class GameState : MonoBehaviour {
 		}
 	}
 }
+
+		// Called by the title screen's Play button (and by Space/Enter).
+		public void RequestStart() {
+			if (!gameStarted && !gameOver) {
+				StartGame();
+			}
+		}
+
 		private void StartGame() {
 
 			//Set the game state
@@ -101,6 +144,9 @@ public class GameState : MonoBehaviour {
 			//Allow the camera to move
 			followCamera.enabled = true;
 
+			if (RoundStarted != null) {
+				RoundStarted ();
+			}
 		}
 
 		private void EndGame() {
@@ -115,11 +161,12 @@ public class GameState : MonoBehaviour {
 
 			//Remove the player from the game
 			player.SetActive (false);
+
+			// Nov 2026: remember the best score for this difficulty.
+			int score = ScoreCounter.score;
+			bool newBest = GameSettings.SubmitScore (GameSettings.Difficulty, score);
+			if (RoundEnded != null) {
+				RoundEnded (score, newBest);
+			}
 		}
 }
-
-
-
-
-
-

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 // PointerInput (added 2026): touch and mouse controls, so Frogs-N-Logs can be played on an
 // iPad/phone browser or with a mouse, not just the keyboard.
@@ -32,7 +33,7 @@ public static class PointerInput
     // always means "away from the camera", whatever angle the camera is at.
     public static Vector3 WorldDirectionTowardPointer(Camera cam, Vector3 frogWorldPosition)
     {
-        if (cam == null || !IsHeld)
+        if (cam == null || !IsHeld || PointerOverMenu())
         {
             return Vector3.zero;
         }
@@ -43,6 +44,19 @@ public static class PointerInput
             Screen.height * DeadZoneFraction,
             cam.transform.right,
             cam.transform.forward);
+    }
+
+    // Nov 2026: pressing an on-screen button (pause, zap) shouldn't also steer the frog.
+    public static bool PointerOverMenu()
+    {
+        EventSystem es = EventSystem.current;
+        if (es == null) return false;
+        if (es.IsPointerOverGameObject()) return true;
+        for (int i = 0; i < Input.touchCount; i++)
+        {
+            if (es.IsPointerOverGameObject(Input.GetTouch(i).fingerId)) return true;
+        }
+        return false;
     }
 
     // The math, kept separate (and free of Input/Screen) so the automated tests can check it.

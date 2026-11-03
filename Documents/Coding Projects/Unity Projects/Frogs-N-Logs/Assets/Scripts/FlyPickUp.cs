@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,6 +14,11 @@ public class FlyPickUp : MonoBehaviour {
 	// This flag makes sure each fly is only eaten once. One fly, one bite.
 	private bool eaten = false;
 
+	// Nov 2026: flies are reused (see FlySpawner), so a "new" fly must forget it was eaten.
+	void OnEnable () {
+		eaten = false;
+	}
+
 	void OnTriggerEnter(Collider other) {
 
 		if (eaten) {
@@ -25,15 +30,15 @@ public class FlyPickUp : MonoBehaviour {
 			eaten = true;
 
 			//... add the pickup particles....
-			Instantiate(pickupPrefab, transform.position, Quaternion.identity);
+			GameObject particles = Instantiate(pickupPrefab, transform.position, Quaternion.identity);
+			AudioManager.Register (particles);
 
-			//...decrement the total number of flies...
-			FlySpawner.totalFlies--;
+			//...update the score (2 per fly with the shop's "Double flies")
+			ScoreCounter.score += Shop.PointsMultiplier;
 
-			//...update the score
-			ScoreCounter.score++;
-
-			Destroy (gameObject);
+			//...and send the fly back to the spawner to reuse later
+			// (this also lowers the count of flies that are out).
+			FlySpawner.Recycle (gameObject);
 		}
 	}
 }

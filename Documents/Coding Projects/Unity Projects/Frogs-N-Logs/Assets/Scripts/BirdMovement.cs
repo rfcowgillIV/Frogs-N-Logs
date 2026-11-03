@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,15 +13,45 @@ public class BirdMovement : MonoBehaviour {
 	private RandomSoundPlayer birdFootsteps;
 
 	// Use this for initialization
+	// Nov 2026: the bird's speed depends on the difficulty (Easy is slower, Hard is faster).
+	// Hazards and the shop's laser can also slow it down for a while (1 = normal).
+	public static float SpeedMultiplier = 1f;
+
+	// Knocked dizzy (lily-pad shield, laser) until this time.
+	public static float StunnedUntil;
+	public static bool IsStunned { get { return Time.time < StunnedUntil; } }
+
+	public static void Stun (float seconds) {
+		StunnedUntil = Mathf.Max (StunnedUntil, Time.time + seconds);
+	}
+	private float baseSpeed;
+	private float baseAcceleration;
+
 	void Start () {
 		birdAgent = GetComponent<UnityEngine.AI.NavMeshAgent> ();
 		birdAnimator = GetComponent<Animator> ();
+		baseSpeed = birdAgent.speed;
+		baseAcceleration = birdAgent.acceleration;
+	}
+
+	// Speed for this frame: difficulty x any temporary effect.
+	private void ApplySpeed () {
+		float m = DifficultyRules.BirdSpeedMultiplier (GameSettings.Difficulty) * SpeedMultiplier;
+		birdAgent.speed = baseSpeed * m;
+		birdAgent.acceleration = baseAcceleration * Mathf.Max (1f, m);
+		birdAgent.isStopped = m <= 0.01f || IsStunned;
+		if (IsStunned) {
+			// Seeing stars: wobble on the spot.
+			transform.Rotate (0f, 360f * Time.deltaTime, 0f);
+		}
 	}
 	
 	// Update is called once per frame
 	void Update () {
 
-		//Set the birds destiantion
+		ApplySpeed ();
+
+		//Set the birds destination
 		birdAgent.SetDestination(target.position);
 
 		//Measure the magnitude of the NavMeshAgent's Velocity
