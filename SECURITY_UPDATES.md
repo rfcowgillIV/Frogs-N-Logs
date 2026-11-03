@@ -69,3 +69,16 @@ Open the project in Unity and play:
 4. The Console should show no red errors.
 
 No Unity editor was available where these changes were made, so step 4 is the compile check.
+
+## November 2026: Unity eMudhra CA (CVE-2026-111943) and Brotli (CVE-2026-111497) advisories
+- Unity 6.3 LTS versions up to 6000.3.27f1 were affected; the fix is **6000.3.27f2**.
+- The project now asks for 6000.3.27f2 (`ProjectSettings/ProjectVersion.txt`), so Unity Hub
+  offers the patched editor when you open it.
+- The GitHub build always uses the newest 6000.3 editor (6000.3.28f1 as of this update), so the
+  live web version is built with a patched release.
+- Unity lists WebGL (the web version) as **not affected** by either issue: browsers check
+  certificates themselves, and the web build is compressed with Gzip, not decompressed with
+  Brotli inside the game. The game also makes no network calls of its own.
+- Players: keep your browser/OS updated (that's where certificate fixes arrive).
+Sources: https://unity.com/security/unity-emudhra-compromise ·
+https://unity.com/security/unity-brotli-decoder-vulnerability
