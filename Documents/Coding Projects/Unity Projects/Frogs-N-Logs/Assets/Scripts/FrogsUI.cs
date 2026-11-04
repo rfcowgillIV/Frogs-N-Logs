@@ -344,6 +344,12 @@ public class FrogsUI : MonoBehaviour
     private void ShowTitle(bool show)
     {
         titlePanel.SetActive(show);
+        // The 2017 "0 Flies" counter peeked out from behind the title card on some screens.
+        foreach (ScoreCounter counter in FindObjectsByType<ScoreCounter>(FindObjectsSortMode.None))
+        {
+            Graphic g = counter.GetComponent<Graphic>();
+            if (g != null) g.enabled = !show;
+        }
         hud.SetActive(!show && GameState.Current != null && GameState.Current.IsPlaying);
         GameState.MenuOpen = show && menuPanel.activeSelf;
     }

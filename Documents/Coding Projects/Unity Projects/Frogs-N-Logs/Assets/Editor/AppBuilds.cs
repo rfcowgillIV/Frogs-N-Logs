@@ -164,8 +164,10 @@ namespace FrogsNLogs.EditorTools
             if (!int.TryParse(Environment.GetEnvironmentVariable("FROGS_BUILD_NUMBER"), out number) || number < 1) number = 1;
             PlayerSettings.Android.bundleVersionCode = number;
             // 64-bit (required by Android phones and Google Play), compiled to native code.
+            // ARM64 for phones and tablets, plus x86-64 for Chromebooks, Intel tablets and
+            // Android emulators (the app tests run on one).
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
-            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.X86_64;
             EditorUserBuildSettings.buildAppBundle = false; // APK: installs straight onto a device
             // Smooth frame pacing on 90/120 Hz Android screens.
             PlayerSettings.Android.optimizedFramePacing = true;
