@@ -189,9 +189,9 @@ public class HelperBuddy : MonoBehaviour
         {
             goal = target.position;
             speed = dashSpeed;
-            if (Flat(goal - transform.position).magnitude < 1.6f) Scare(target);
+            if (Flat(goal - transform.position).magnitude < 1.6f) Scare(target); // (clears target)
             // Give up if it gets away.
-            if (Flat(target.position - frog.position).magnitude > Shop.HelperGuardRadius * 2.5f) State = Mode.Return;
+            else if (Flat(target.position - frog.position).magnitude > Shop.HelperGuardRadius * 2.5f) State = Mode.Return;
         }
         else
         {
