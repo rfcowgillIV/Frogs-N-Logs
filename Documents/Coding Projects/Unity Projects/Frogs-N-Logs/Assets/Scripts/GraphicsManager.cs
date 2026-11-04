@@ -115,6 +115,35 @@ public class GraphicsManager : MonoBehaviour
         }
     }
 
+    // Frame rate cap (Pause > Graphics > Frame rate): 30, 60 or match the screen.
+    // On the web the browser paces frames (iPhone/iPad Safari usually holds pages to 60);
+    // in the apps the game asks for the screen's own rate, e.g. 120 on ProMotion iPads.
+    public static int ScreenRefreshRate
+    {
+        get
+        {
+            double hz = Screen.currentResolution.refreshRateRatio.value;
+            return hz >= 30.0 ? Mathf.RoundToInt((float)hz) : 60;
+        }
+    }
+
+    public static void ApplyFrameRate()
+    {
+        FrameRateCap cap = GameSettings.FrameRate;
+        if (cap == FrameRateCap.Fps30) { QualitySettings.vSyncCount = 0; Application.targetFrameRate = 30; return; }
+        if (cap == FrameRateCap.Fps60) { QualitySettings.vSyncCount = 0; Application.targetFrameRate = 60; return; }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;   // the browser draws as often as the screen allows
+#elif UNITY_IOS || UNITY_ANDROID
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = ScreenRefreshRate; // phones default to 30 unless asked
+#else
+        QualitySettings.vSyncCount = 1;     // desktop: lock to the monitor, no tearing
+        Application.targetFrameRate = -1;
+#endif
+    }
+
     public static GraphicsTier Resolve(GraphicsTier choice)
     {
         return choice == GraphicsTier.Auto ? autoDecision : choice;
@@ -124,8 +153,7 @@ public class GraphicsManager : MonoBehaviour
     {
         GraphicsTier tier = Resolve(GameSettings.Graphics);
         ActiveTier = tier;
-        QualitySettings.vSyncCount = 0; // the browser paces frames itself
-        Application.targetFrameRate = -1;
+        ApplyFrameRate();
 
         var urp = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
         if (urp != null)

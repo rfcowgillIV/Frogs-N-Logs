@@ -1,0 +1,177 @@
+# App builds (added Nov 2026)
+#
+# Builds Frogs-N-Logs as real apps and puts them on a GitHub Release (free) to download:
+#   Android   Frogs-N-Logs-Android.apk        install straight onto a phone or tablet
+#   Windows   Frogs-N-Logs-Windows.zip        unzip, run Frogs-N-Logs.exe
+#   Mac       Frogs-N-Logs-Mac.zip            Apple silicon (M-series) + Intel
+#   Linux     Frogs-N-Logs-Linux.tar.gz
+#   iOS       Frogs-N-Logs-iOS-Xcode.zip      Xcode project, for signing later with an
+#                                             Apple Developer account
+#
+# How to run it: GitHub > Actions > "App builds" > Run workflow (type a version like 1.0.0),
+# or push a tag like v1.0.0. It doesn't run on every push because it takes about an hour.
+#
+# The builds run one after another in one job, so they share the one Unity Personal license
+# seat with the web build workflow (same "unity-license" queue).
+name: App builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g. 1.0.0)"
+        required: true
+        default: "1.0.0"
+      platforms:
+        description: "Platforms to build"
+        required: true
+        default: "android windows mac linux ios"
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unity-license
+  cancel-in-progress: false
+
+env:
+  PROJECT_PATH: "Documents/Coding Projects/Unity Projects/Frogs-N-Logs"
+  UNITY_STREAM: "6000.3"
+
+jobs:
+  apps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Free disk space for the Unity images
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          docker system prune -af >/dev/null 2>&1 || true
+          df -h /
+
+      - name: Work out the version and Unity images
+        id: setup
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_PLATFORMS: ${{ github.event.inputs.platforms }}
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then version="${GITHUB_REF_NAME#v}"; else version="${INPUT_VERSION:-1.0.0}"; fi
+          echo "FROGS_VERSION=$version" >> "$GITHUB_ENV"
+          echo "FROGS_BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "platforms=${INPUT_PLATFORMS:-android windows mac linux ios}" >> "$GITHUB_OUTPUT"
+          url="https://hub.docker.com/v2/repositories/unityci/editor/tags?page_size=100&name=${UNITY_STREAM}"
+          tags=$(curl -fsSL "$url" | jq -r '.results[].name')
+          # Newest editor that has every image we need.
+          unity=""
+          for v in $(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-base-3$" | sed -E 's/^ubuntu-(.*)-base-3$/\1/' | sort -V -r); do
+            ok=1
+            for m in android windows-mono mac-mono ios; do echo "$tags" | grep -qx "ubuntu-$v-$m-3" || ok=0; done
+            if [ $ok = 1 ]; then unity=$v; break; fi
+          done
+          [ -n "$unity" ] || { echo "::error::No complete set of Unity images found"; exit 1; }
+          echo "Unity $unity, version $version"
+          echo "unity=$unity" >> "$GITHUB_OUTPUT"
+
+      - name: Read serial from license file (if it has one)
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          serial=$(python3 - <<'PY'
+          import base64, binascii, os, re
+          m = re.search(r'<DeveloperData\s+Value\s*=\s*"([^"]*)"', os.environ.get("UNITY_LICENSE", ""))
+          raw = re.sub(r"\s+", "", m.group(1)) if m else ""
+          try:
+              print(base64.b64decode(raw).decode("latin-1")[4:].strip() if raw else "")
+          except (binascii.Error, ValueError):
+              print("")
+          PY
+          )
+          if [ -n "$serial" ]; then echo "::add-mask::$serial"; echo "UNITY_SERIAL=$serial" >> "$GITHUB_ENV"; fi
+
+      - name: Build the apps
+        id: build
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY: ${{ steps.setup.outputs.unity }}
+          PLATFORMS: ${{ steps.setup.outputs.platforms }}
+        run: |
+          chmod +x .github/scripts/unity-app-build.sh
+          failed=""
+          mkdir -p release
+          for p in $PLATFORMS; do
+            case $p in
+              android) image=android ;;
+              windows) image=windows-mono ;;
+              mac)     image=mac-mono ;;
+              ios)     image=ios ;;
+              linux)   image=base ;;
+              *) echo "::warning::Unknown platform $p"; continue ;;
+            esac
+            echo "::group::$p (unityci/editor:ubuntu-$UNITY-$image-3)"
+            docker pull -q "unityci/editor:ubuntu-$UNITY-$image-3"
+            if .github/scripts/unity-app-build.sh "unityci/editor:ubuntu-$UNITY-$image-3" "$p" "apps/$p"; then
+              case $p in
+                android) cp apps/android/Frogs-N-Logs.apk release/Frogs-N-Logs-Android.apk ;;
+                windows) (cd apps/windows && rm -rf *_BurstDebugInformation_DoNotShip && zip -qr ../../release/Frogs-N-Logs-Windows.zip .) ;;
+                mac)     (cd apps/mac && zip -qry ../../release/Frogs-N-Logs-Mac.zip Frogs-N-Logs.app) ;;
+                linux)   (cd apps/linux && rm -rf *_BurstDebugInformation_DoNotShip && tar -czf ../../release/Frogs-N-Logs-Linux.tar.gz .) ;;
+                ios)     (cd apps/ios && zip -qry ../../release/Frogs-N-Logs-iOS-Xcode.zip .) ;;
+              esac
+            else
+              failed="$failed $p"
+            fi
+            echo "::endgroup::"
+          done
+          ls -lh release
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+
+      # Apple silicon Macs refuse to open apps that aren't signed at all. Without a paid Apple
+      # Developer account we can still "ad-hoc" sign it (free), so it opens after one
+      # right-click > Open. (rcodesign is an open-source signing tool that runs on Linux.)
+      - name: Ad-hoc sign the Mac app
+        if: hashFiles('release/Frogs-N-Logs-Mac.zip') != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh api "repos/indygreg/apple-platform-rs/releases?per_page=30" --jq '[.[] | select(.tag_name | startswith("apple-codesign/"))][0].tag_name')
+          gh release download "$tag" -R indygreg/apple-platform-rs -p '*x86_64-unknown-linux-musl.tar.gz' -D /tmp/rcs
+          tar -xzf /tmp/rcs/*.tar.gz -C /tmp/rcs
+          rcs=$(find /tmp/rcs -type f -name rcodesign | head -1)
+          "$rcs" sign apps/mac/Frogs-N-Logs.app
+          rm release/Frogs-N-Logs-Mac.zip
+          (cd apps/mac && zip -qry ../../release/Frogs-N-Logs-Mac.zip Frogs-N-Logs.app)
+          echo "Mac app ad-hoc signed with $tag"
+
+      - name: Publish the GitHub Release
+        if: hashFiles('release/*') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.setup.outputs.version }}
+          FAILED: ${{ steps.build.outputs.failed }}
+        run: |
+          tag="v$VERSION"
+          python3 .github/scripts/release-notes.py "$VERSION" "$FAILED" > notes.md
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" release/* --clobber
+            gh release edit "$tag" --notes-file notes.md
+          else
+            pre=""; case "$VERSION" in *-*) pre="--prerelease" ;; esac   # e.g. 1.0.0-beta.1
+            gh release create "$tag" release/* --title "Frogs-N-Logs $VERSION" --notes-file notes.md --target "$GITHUB_SHA" $pre
+          fi
+          echo "### Apps published: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if any platform failed
+        if: steps.build.outputs.failed != ''
+        run: |
+          echo "::error::These platforms didn't build:${{ steps.build.outputs.failed }}"
+          exit 1

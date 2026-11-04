@@ -847,5 +847,24 @@ namespace FrogsNLogs.Tests
             StringAssert.Contains("Quaternius", text, "Models should be credited");
             yield return Screenshot("14-credits");
         }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T18_FrameRateSettingCapsTheGame()
+        {
+            yield return LoadLevel();
+            SetStaticProp("GameSettings", "FrameRate", Enum("FrameRateCap", "Fps30"));
+            yield return null;
+            Assert.AreEqual(30, Application.targetFrameRate, "30 should cap the game at 30 FPS");
+            SetStaticProp("GameSettings", "FrameRate", Enum("FrameRateCap", "Fps60"));
+            yield return null;
+            Assert.AreEqual(60, Application.targetFrameRate, "60 should cap the game at 60 FPS");
+            SetStaticProp("GameSettings", "FrameRate", Enum("FrameRateCap", "MatchScreen"));
+            yield return null;
+            Assert.AreNotEqual(30, Application.targetFrameRate, "Match screen should lift the cap");
+            Assert.AreNotEqual(60, Application.targetFrameRate, "Match screen should lift the cap");
+            Assert.AreEqual(RigidbodyInterpolation.Interpolate, ((Component)FindOne("PlayerMovement")).GetComponent<Rigidbody>().interpolation,
+                "The frog should glide smoothly between physics steps");
+            Assert.IsNotNull(Object.FindFirstObjectByType(GameType("SafeAreaFitter")), "Menus should stay clear of phone notches");
+        }
     }
 }

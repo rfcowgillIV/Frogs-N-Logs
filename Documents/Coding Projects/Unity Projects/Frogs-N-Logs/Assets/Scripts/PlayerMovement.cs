@@ -49,6 +49,9 @@ public class PlayerMovement : MonoBehaviour {
 		//Gather the components from the Player GameObject
 		playerAnimator = GetComponent<Animator> ();
 		playerRigidbody = GetComponent<Rigidbody> ();
+		// Nov 2026: physics runs 50 times a second; interpolate so the frog glides smoothly
+		// on 120 Hz+ screens instead of stepping.
+		if (playerRigidbody != null) playerRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
 	}
 
 	void OnDisable () {
