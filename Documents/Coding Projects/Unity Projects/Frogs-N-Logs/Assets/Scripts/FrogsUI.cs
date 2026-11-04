@@ -196,6 +196,9 @@ public class FrogsUI : MonoBehaviour
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
         canvasGo.AddComponent<GraphicRaycaster>();
+        canvasGo.AddComponent<ResponsiveCanvas>(); // landscape or portrait scaling
+        if (Camera.main != null && Camera.main.GetComponent<ScreenFitCamera>() == null)
+            Camera.main.gameObject.AddComponent<ScreenFitCamera>(); // same view on any screen shape
         // Nov 2026: keep menus and buttons clear of phone notches and rounded corners.
         var safe = new GameObject("Safe Area", typeof(RectTransform));
         safe.transform.SetParent(canvasGo.transform, false);
@@ -393,11 +396,18 @@ public class FrogsUI : MonoBehaviour
         t.name = name;
         Destroy(t.GetComponent<LayoutElement>());
         var rt = t.rectTransform;
-        rt.anchorMin = rt.anchorMax = anchor;
+        // Nov 2026: stretch across the screen (clear of the pause button) and shrink long lines
+        // to fit, so nothing runs off the edge of a narrow phone held upright.
+        rt.anchorMin = new Vector2(0f, anchor.y);
+        rt.anchorMax = new Vector2(1f, anchor.y);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = position;
-        rt.sizeDelta = box;
-        t.horizontalOverflow = HorizontalWrapMode.Overflow;
+        rt.sizeDelta = new Vector2(-200f, box.y);
+        t.horizontalOverflow = HorizontalWrapMode.Wrap;
+        t.verticalOverflow = VerticalWrapMode.Truncate;
+        t.resizeTextForBestFit = true;
+        t.resizeTextMinSize = Mathf.Max(12, size / 2);
+        t.resizeTextMaxSize = size;
         var outline = t.gameObject.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.75f);
         return t;
@@ -589,17 +599,21 @@ public class FrogsUI : MonoBehaviour
         gameOverPanel = new GameObject("Game Over Scores", typeof(RectTransform));
         gameOverPanel.transform.SetParent(root, false);
         var rt = gameOverPanel.GetComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = new Vector2(0.05f, 0.5f);
+        rt.anchorMax = new Vector2(0.95f, 0.5f);
         rt.anchoredPosition = new Vector2(0f, -120f);
-        rt.sizeDelta = new Vector2(700f, 140f);
+        rt.sizeDelta = new Vector2(0f, 160f);
         gameOverText = gameOverPanel.AddComponent<Text>();
         gameOverText.font = font;
         gameOverText.fontSize = 32;
         gameOverText.alignment = TextAnchor.UpperCenter;
         gameOverText.color = Color.white;
         gameOverText.supportRichText = true;
-        gameOverText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        gameOverText.horizontalOverflow = HorizontalWrapMode.Wrap;
         gameOverText.verticalOverflow = VerticalWrapMode.Overflow;
+        gameOverText.resizeTextForBestFit = true;
+        gameOverText.resizeTextMinSize = 18;
+        gameOverText.resizeTextMaxSize = 32;
         gameOverText.raycastTarget = false;
         gameOverPanel.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.7f);
         gameOverPanel.SetActive(false);
@@ -1035,6 +1049,7 @@ public class FrogsUI : MonoBehaviour
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = Vector2.zero;
             go.AddComponent<Outline>().effectColor = new Color(0.55f, 0.80f, 0.29f, 0.35f);
+            go.AddComponent<FitToParent>(); // always fits the screen, either way up
         }
         return go.GetComponent<RectTransform>();
     }

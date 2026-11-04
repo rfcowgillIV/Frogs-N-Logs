@@ -158,6 +158,52 @@ namespace FrogsNLogs.Tests
             yield return null;
         }
 
+        // Nov 2026: a phone held upright (720 x 1280), menus laid out for portrait.
+        private static IEnumerator PortraitScreenshot(string name)
+        {
+            yield return null;
+            Camera cam = Camera.main;
+            GameObject uiGo = GameObject.Find("Frogs UI Canvas");
+            if (cam == null || uiGo == null) yield break;
+            Canvas ui = uiGo.GetComponent<Canvas>();
+            var rt = new RenderTexture(720, 1280, 24);
+            RenderTexture previous = cam.targetTexture;
+            ui.renderMode = RenderMode.ScreenSpaceCamera;
+            ui.worldCamera = cam;
+            ui.planeDistance = cam.nearClipPlane + 0.5f;
+            cam.targetTexture = rt;
+            // Let the scaler, layout and fit-to-screen run at the new size.
+            yield return null;
+            yield return null;
+            try
+            {
+                string dir = Environment.GetEnvironmentVariable("FROGS_SCREENSHOT_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = Path.Combine(Application.dataPath, "../PlaytestScreenshots");
+                Directory.CreateDirectory(dir);
+                Canvas.ForceUpdateCanvases();
+                cam.Render();
+                RenderTexture.active = rt;
+                var tex = new Texture2D(720, 1280, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, 720, 1280), 0, 0);
+                tex.Apply();
+                RenderTexture.active = null;
+                File.WriteAllBytes(Path.Combine(dir, name + ".png"), tex.EncodeToPNG());
+                Object.Destroy(tex);
+                Debug.Log("[Playtest] Saved screenshot " + name);
+            }
+            catch (Exception e)
+            {
+                Debug.Log("[Playtest] Screenshot " + name + " skipped: " + e.Message);
+            }
+            finally
+            {
+                cam.targetTexture = previous;
+                ui.renderMode = RenderMode.ScreenSpaceOverlay;
+                rt.Release();
+                Object.Destroy(rt);
+            }
+        }
+
         private static IEnumerator Screenshot(string name)
         {
             // Note: not WaitForEndOfFrame - in batch mode (no screen) it never fires and the
@@ -865,6 +911,48 @@ namespace FrogsNLogs.Tests
             Assert.AreEqual(RigidbodyInterpolation.Interpolate, ((Component)FindOne("PlayerMovement")).GetComponent<Rigidbody>().interpolation,
                 "The frog should glide smoothly between physics steps");
             Assert.IsNotNull(Object.FindFirstObjectByType(GameType("SafeAreaFitter")), "Menus should stay clear of phone notches");
+        }
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T19_EverythingFitsOnAPhoneHeldUpright()
+        {
+            yield return LoadLevel();
+            Type layout = GameType("ScreenLayout");
+            FieldInfo testAspect = layout.GetField("TestAspect", BindingFlags.Public | BindingFlags.Static);
+            float landscapeFov = Camera.main.fieldOfView;
+            try
+            {
+                // An iPhone held upright is about 390 x 844 points.
+                testAspect.SetValue(null, (float?)(390f / 844f));
+                yield return null;
+                yield return null;
+                Assert.AreEqual(true, layout.GetProperty("IsPortrait").GetValue(null), "Should know it's portrait");
+                var scaler = GameObject.Find("Frogs UI Canvas").GetComponent<CanvasScaler>();
+                Assert.AreEqual(new Vector2(720f, 1280f), scaler.referenceResolution, "Menus should use the portrait layout");
+                Assert.Greater(Camera.main.fieldOfView, landscapeFov + 5f, "The view should widen so you can see the sides");
+                yield return PortraitScreenshot("15-portrait-title");
+
+                // Every menu card fits inside the screen once fitted.
+                foreach (Component fit in Object.FindObjectsByType(GameType("FitToParent"), FindObjectsInactive.Exclude, FindObjectsSortMode.None).Cast<Component>())
+                {
+                    var rt = (RectTransform)fit.transform;
+                    var parent = (RectTransform)rt.parent;
+                    float w = rt.rect.width * rt.localScale.x, h = rt.rect.height * rt.localScale.y;
+                    Assert.LessOrEqual(w, parent.rect.width + 1f, fit.name + " is too wide for the screen");
+                    Assert.LessOrEqual(h, parent.rect.height + 1f, fit.name + " is too tall for the screen");
+                }
+
+                yield return StartGame();
+                yield return new WaitForSeconds(1f);
+                yield return PortraitScreenshot("16-portrait-playing");
+            }
+            finally
+            {
+                testAspect.SetValue(null, null);
+            }
+            yield return null;
+            yield return null;
+            Assert.AreEqual(landscapeFov, Camera.main.fieldOfView, 0.5f, "Back to the landscape view");
         }
     }
 }
