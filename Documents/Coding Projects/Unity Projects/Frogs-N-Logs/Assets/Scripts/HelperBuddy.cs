@@ -10,7 +10,7 @@ using UnityEngine;
 //   Marmalade the cat   (shop)  fastest dash
 //   Shadow the wolf     (shop)  dizzy for 4.5 s
 //   Buddy training      (shop)  recovers faster (12 -> 9 -> 7 -> 5 s)
-//   Guard zone          (shop)  guards a bigger area (6 -> 8 -> 10 -> 12 m)
+//   Guard zone          (shop)  guards a bigger area (7 -> 9 -> 11 -> 13 m)
 //
 // Turn it off in Pause > Extras > Helper buddy. Models: Quaternius "Animal Pack Vol. 2" (CC0).
 // Who's a good boy? Biscuit is.

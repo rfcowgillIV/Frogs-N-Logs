@@ -125,7 +125,7 @@ public static class Shop
 
     // ---- helper buddy ----
     public static float HelperCooldown { get { return new[] { 12f, 9f, 7f, 5f }[Mathf.Clamp(LevelOf("helper.training"), 0, 3)]; } }
-    public static float HelperGuardRadius { get { return 6f + 2f * LevelOf("helper.guard"); } }
+    public static float HelperGuardRadius { get { return 7f + 2f * LevelOf("helper.guard"); } }
 
     // Cheats and rewards (daily challenge) add flies without touching the score.
     public static void Grant(int flies)

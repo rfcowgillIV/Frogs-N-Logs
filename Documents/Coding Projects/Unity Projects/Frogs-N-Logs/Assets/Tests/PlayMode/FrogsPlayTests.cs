@@ -1037,8 +1037,9 @@ namespace FrogsNLogs.Tests
             GameObject frog = GameObject.FindWithTag("Player");
             Component bird = FindOne("BirdMovement");
             var agent = bird.GetComponent<UnityEngine.AI.NavMeshAgent>();
-            agent.Warp(frog.transform.position + new Vector3(4f, 0f, 0f));
-            float until = Time.time + 6f;
+            // Start it outside the guard zone so it flies in, like in a real round.
+            agent.Warp(frog.transform.position + new Vector3(9f, 0f, 0f));
+            float until = Time.time + 8f;
             while (Time.time < until && !(bool)GameType("BirdMovement").GetProperty("IsStunned").GetValue(null))
                 yield return null;
             Assert.IsTrue((bool)GameType("BirdMovement").GetProperty("IsStunned").GetValue(null), "The buddy should chase the bird off");
