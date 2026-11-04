@@ -25,6 +25,11 @@ public class FlyPickUp : MonoBehaviour {
 			return;
 		}
 
+		// Nov 2026: no free points before the round starts (a fly can spawn right on the frog).
+		if (GameState.Current != null && !GameState.Current.IsPlaying) {
+			return;
+		}
+
 		//If the colider other is tagged with "player"...
 		if (other.CompareTag ("Player")) {
 			eaten = true;

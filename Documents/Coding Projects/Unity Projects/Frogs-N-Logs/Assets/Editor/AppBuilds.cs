@@ -134,12 +134,12 @@ namespace FrogsNLogs.EditorTools
                 PlayerSettings.SetApplicationIdentifier(t, AppId);
             }
 
-            // Landscape only (both ways), like the web version.
+            // Any way up: the menus and camera adapt to landscape and portrait (ScreenLayout.cs).
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
             PlayerSettings.allowedAutorotateToLandscapeLeft = true;
             PlayerSettings.allowedAutorotateToLandscapeRight = true;
-            PlayerSettings.allowedAutorotateToPortrait = false;
-            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+            PlayerSettings.allowedAutorotateToPortrait = true;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = true;
 
             // Desktop: full screen window, resizable if the player leaves full screen.
             PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
