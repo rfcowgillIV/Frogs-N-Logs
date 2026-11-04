@@ -196,7 +196,14 @@ public class FrogsUI : MonoBehaviour
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
         canvasGo.AddComponent<GraphicRaycaster>();
-        root = canvasGo.GetComponent<RectTransform>();
+        // Nov 2026: keep menus and buttons clear of phone notches and rounded corners.
+        var safe = new GameObject("Safe Area", typeof(RectTransform));
+        safe.transform.SetParent(canvasGo.transform, false);
+        root = safe.GetComponent<RectTransform>();
+        root.anchorMin = Vector2.zero;
+        root.anchorMax = Vector2.one;
+        root.offsetMin = root.offsetMax = Vector2.zero;
+        safe.AddComponent<SafeAreaFitter>();
     }
 
     // ---------------------------------------------------------------- per frame
@@ -773,6 +780,22 @@ public class FrogsUI : MonoBehaviour
             Image img = b.GetComponent<Image>();
             refreshers.Add(() => SetSelected(img, GameSettings.Filter == captured));
         }
+
+        Label(rt, "FRAME RATE", 18, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+        RectTransform fr = Row("Frame rate", rt, 8f);
+        foreach (FrameRateCap c in new[] { FrameRateCap.Fps30, FrameRateCap.Fps60, FrameRateCap.MatchScreen })
+        {
+            FrameRateCap captured = c;
+            string label = c == FrameRateCap.Fps30 ? "30" : c == FrameRateCap.Fps60 ? "60" : "Match screen";
+            Button b = MakeButton(fr, label, 22, () => GameSettings.FrameRate = captured, c == FrameRateCap.MatchScreen ? 220f : 110f, 48f);
+            Image img = b.GetComponent<Image>();
+            refreshers.Add(() => SetSelected(img, GameSettings.FrameRate == captured));
+        }
+        Text frNote = Label(rt, "", 17, Muted, FontStyle.Italic, TextAnchor.MiddleLeft);
+        refreshers.Add(() => frNote.text = GameSettings.FrameRate == FrameRateCap.Fps30
+            ? "30 saves battery."
+            : GameSettings.FrameRate == FrameRateCap.Fps60 ? "Smooth on every device."
+            : "As smooth as your screen allows (this screen: " + GraphicsManager.ScreenRefreshRate + " Hz).");
 
         ToggleRow(rt, "Show frame rate (FPS)", () => GameSettings.ShowFps, on => GameSettings.ShowFps = on);
         return page;

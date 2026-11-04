@@ -10,6 +10,8 @@ using UnityEngine;
 // It's not hoarding if it's PlayerPrefs. It's "persistence". Ribbit.
 public enum Difficulty { Easy = 0, Medium = 1, Hard = 2 }
 public enum GraphicsTier { Auto = 0, Low = 1, Medium = 2, High = 3 }
+// Frame rate cap (Nov 2026). MatchScreen = as fast as the screen refreshes (60, 120, 144, 240...).
+public enum FrameRateCap { Fps30 = 0, Fps60 = 1, MatchScreen = 2 }
 public enum ScreenFilterMode { None = 0, Retro = 1, BlackAndWhite = 2, Night = 3, Cartoon = 4, ColorBlindFriendly = 5, Vintage = 6 }
 
 public static class GameSettings
@@ -35,6 +37,12 @@ public static class GameSettings
     {
         get { return (ScreenFilterMode)Mathf.Clamp(GetInt("filter", 0), 0, 6); }
         set { SetInt("filter", (int)value); }
+    }
+
+    public static FrameRateCap FrameRate
+    {
+        get { return (FrameRateCap)Mathf.Clamp(GetInt("frameRate", (int)FrameRateCap.MatchScreen), 0, 2); }
+        set { SetInt("frameRate", (int)value); }
     }
 
     public static bool ShowFps
