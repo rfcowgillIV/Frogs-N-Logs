@@ -20,6 +20,21 @@ public class LevelManager : MonoBehaviour
     // Fired when a new level begins: (level number starting at 1, level name).
     public static event Action<int, string> LevelChanged;
 
+    // Fired once per run when you survive the Night (reach the final fly goal): credits roll!
+    public static event Action Finished;
+    public bool HasFinished { get; private set; }
+
+    // Flies needed to survive the Night and see the credits (you can keep playing after).
+    public static int FinalGoal(Difficulty d)
+    {
+        switch (d)
+        {
+            case Difficulty.Easy: return 30;
+            case Difficulty.Hard: return 48;
+            default: return 40;
+        }
+    }
+
     public static readonly string[] Names = { "The Pond", "The Swamp", "Night" };
 
     public int Level { get; private set; } = 1;
@@ -29,7 +44,11 @@ public class LevelManager : MonoBehaviour
     // Total flies needed to leave the current level (-1 on the last level).
     public int NextGoal
     {
-        get { return IsFinalLevel ? -1 : Goals(GameSettings.Difficulty)[Level - 1]; }
+        get
+        {
+            if (IsFinalLevel) return HasFinished ? -1 : FinalGoal(GameSettings.Difficulty);
+            return Goals(GameSettings.Difficulty)[Level - 1];
+        }
     }
 
     public static int[] Goals(Difficulty d)
@@ -56,6 +75,16 @@ public class LevelManager : MonoBehaviour
         public float ambientIntensity;
         public Color sunColor;
         public float sunIntensity;
+    }
+
+    private Color fromTint = Color.white;
+    private float fromSaturation = 18f;
+
+    private static Color Tint(int level)
+    {
+        if (level == 2) return new Color(0.9f, 1f, 0.82f);
+        if (level >= 3) return new Color(0.72f, 0.8f, 1f);
+        return Color.white;
     }
 
     private Look day;
@@ -92,7 +121,14 @@ public class LevelManager : MonoBehaviour
         if (blend < 1f)
         {
             blend = Mathf.Min(1f, blend + Time.deltaTime / BlendSeconds);
-            ApplyLook(Lerp(from, to, Mathf.SmoothStep(0f, 1f, blend)));
+            float k = Mathf.SmoothStep(0f, 1f, blend);
+            ApplyLook(Lerp(from, to, k));
+            // Tint the cartoon "look" too (Stylizer's colour grading).
+            if (Stylizer.Grading != null)
+            {
+                Stylizer.Grading.colorFilter.Override(Color.Lerp(fromTint, Tint(Level), k));
+                Stylizer.Grading.saturation.Override(Mathf.Lerp(fromSaturation, Level >= 3 ? 0f : 18f, k));
+            }
         }
 
         GameState game = GameState.Current;
@@ -102,6 +138,12 @@ public class LevelManager : MonoBehaviour
         if (!IsFinalLevel && score >= NextGoal)
         {
             GoToLevel(Level + 1);
+        }
+        else if (IsFinalLevel && !HasFinished && score >= FinalGoal(GameSettings.Difficulty))
+        {
+            HasFinished = true;
+            Debug.Log("[Levels] Survived the night! Credits roll.");
+            if (Finished != null) Finished();
         }
 
         // Night: the bird speeds up every 10 flies (up to 1.5x).
@@ -122,6 +164,11 @@ public class LevelManager : MonoBehaviour
         from = Capture();
         to = LookFor(level);
         blend = 0f;
+        if (Stylizer.Grading != null)
+        {
+            fromTint = Stylizer.Grading.colorFilter.value;
+            fromSaturation = Stylizer.Grading.saturation.value;
+        }
 
         Debug.Log("[Levels] Level " + level + ": " + LevelName);
         if (LevelChanged != null) LevelChanged(level, LevelName);

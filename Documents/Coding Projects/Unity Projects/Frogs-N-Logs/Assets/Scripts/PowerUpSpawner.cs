@@ -91,6 +91,7 @@ public class PowerUpSpawner : MonoBehaviour
         }
         var m = new Material(glowShared) { hideFlags = HideFlags.HideAndDontSave };
         m.SetColor("_Color", color);
+        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", color);
         if (m.HasProperty("_Rim")) m.SetFloat("_Rim", rim);
         return m;
     }
@@ -158,6 +159,7 @@ public class PowerUpSpawner : MonoBehaviour
             {
                 r.GetPropertyBlock(block);
                 block.SetColor("_Color", new Color(1f, 0.8f, 0.15f));
+                block.SetColor("_BaseColor", new Color(1f, 0.8f, 0.15f));
                 block.SetColor("_EmissionColor", new Color(1f, 0.7f, 0.1f));
                 r.SetPropertyBlock(block);
             }

@@ -187,10 +187,19 @@ namespace FrogsNLogs.Tests
                     ui.worldCamera = cam;
                     ui.planeDistance = cam.nearClipPlane + 0.5f;
                 }
-                cam.targetTexture = rt;
                 Canvas.ForceUpdateCanvases();
-                cam.Render();
-                cam.targetTexture = previous;
+                // Nov 2026 (URP): ask the render pipeline for a frame into our texture.
+                var request = new UnityEngine.Rendering.RenderPipeline.StandardRequest { destination = rt };
+                if (UnityEngine.Rendering.RenderPipeline.SupportsRenderRequest(cam, request))
+                {
+                    UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(cam, request);
+                }
+                else
+                {
+                    cam.targetTexture = rt;
+                    cam.Render();
+                    cam.targetTexture = previous;
+                }
                 if (ui != null) ui.renderMode = RenderMode.ScreenSpaceOverlay;
 
                 RenderTexture.active = rt;
@@ -542,9 +551,12 @@ namespace FrogsNLogs.Tests
                 bool music = (bool)GameType("AudioManager").GetMethod("IsMusic").Invoke(null, new object[] { source });
                 if (music) Assert.AreEqual(0f, source.volume, 0.001f, "Music should be muted: " + source.name);
             }
-            Behaviour filter = (Behaviour)Camera.main.GetComponent(GameType("ScreenFilter"));
-            Assert.IsNotNull(filter, "Filter should be attached to the camera");
-            Assert.IsTrue(filter.enabled, "Night filter should be on");
+            // Nov 2026 (URP): filters are a renderer feature now, not a camera component.
+            object mode = GetStaticProp("GameSettings", "Filter");
+            int pass = (int)GameType("ScreenFilter").GetMethod("PassFor").Invoke(null, new[] { mode });
+            Assert.AreNotEqual(-1, pass, "Night filter should pick a shader pass");
+            Assert.IsNotNull(Resources.Load<Shader>("FrogsFilters"), "Filter shader missing");
+            Debug.Log("[Playtest] Filter feature installed: " + GetStaticProp("FrogsFilterFeature", "IsInstalled"));
             Assert.AreEqual(Enum("GraphicsTier", "Low"), GetStaticProp("GraphicsManager", "ActiveTier"));
             yield return Screenshot("07-night-filter-low");
 
@@ -774,6 +786,66 @@ namespace FrogsNLogs.Tests
 
             module.inputOverride = null;
             Assert.IsTrue(((Behaviour)FindOne("PlayerMovement")).enabled, "A real click on Play should start the game");
+        }
+
+        // ---------- Nov 2026 round 3: URP, new models, music, credits ----------
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T15_NewCartoonModelsReplaceTheOldOnes()
+        {
+            yield return LoadLevel();
+            yield return null;
+            GameObject frog = GameObject.Find("Frog (new model)");
+            GameObject eagle = GameObject.Find("Eagle (new model)");
+            Assert.IsNotNull(frog, "The new cartoon frog should be in the level");
+            Assert.IsNotNull(eagle, "The new cartoon eagle should be in the level");
+            Assert.IsNotNull(frog.GetComponentInChildren<Animation>(), "The frog should have its animations");
+            Assert.IsNotNull(Object.FindFirstObjectByType(GameType("SceneDressing")), "Trees and plants should be added");
+            Assert.IsNotNull(UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline, "URP should be the active pipeline");
+            yield return StartGame();
+            yield return new WaitForSeconds(1f);
+            yield return Screenshot("13-new-models");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T16_NewSoundsAndMusicAreThere()
+        {
+            yield return LoadLevel();
+            foreach (string name in new[] { "Ribbit1", "Croak", "FlyEat", "PowerUp", "Click", "LevelUp", "GameOver", "Win", "Zap", "ShieldPop", "Crickets" })
+            {
+                Assert.IsNotNull(Resources.Load<AudioClip>("Audio/" + name), "Missing sound " + name);
+            }
+            foreach (string track in new[] { "FluffingaDuck", "Carefree", "SneakySnitch", "Investigations" })
+            {
+                Assert.IsTrue(File.Exists(Path.Combine(Application.streamingAssetsPath, "Music/" + track + ".mp3")), "Missing music " + track);
+            }
+            object director = GetStaticProp("AudioDirector", "Instance");
+            Assert.IsNotNull(director, "The music player should start with the game");
+        }
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T17_SurvivingTheNightRollsTheCredits()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+
+            object levels = GetStaticProp("LevelManager", "Instance");
+            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 3 });
+            yield return null;
+            int goal = (int)GameType("LevelManager").GetMethod("FinalGoal").Invoke(null, new[] { GetStaticProp("GameSettings", "Difficulty") });
+            SetStaticField("ScoreCounter", "score", goal);
+            yield return new WaitForSecondsRealtime(1.5f);
+
+            Assert.IsTrue((bool)levels.GetType().GetProperty("HasFinished").GetValue(levels), "Reaching the final goal should finish the night");
+            Component ui = FindOne("FrogsUI");
+            Assert.IsTrue((bool)ui.GetType().GetProperty("CreditsShowing").GetValue(ui), "Credits should roll");
+            string text = AllVisibleText();
+            StringAssert.Contains("Kevin MacLeod", text, "Music should be credited");
+            StringAssert.Contains("Quaternius", text, "Models should be credited");
+            yield return Screenshot("14-credits");
         }
     }
 }

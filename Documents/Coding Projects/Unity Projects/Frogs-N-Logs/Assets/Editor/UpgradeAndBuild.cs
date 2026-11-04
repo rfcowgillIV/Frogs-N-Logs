@@ -114,6 +114,9 @@ namespace FrogsNLogs.EditorTools
                 Debug.Log("[FrogsUpgrade] Unity " + Application.unityVersion + ": switching assets to text format...");
                 EditorSettings.serializationMode = SerializationMode.ForceText;
 
+                // Nov 2026: Universal Render Pipeline + material conversion (FrogsURPSetup.cs).
+                FrogsURPSetup.Run();
+
                 Debug.Log("[FrogsUpgrade] Re-saving every asset in the new format...");
                 AssetDatabase.ForceReserializeAssets();
                 AssetDatabase.SaveAssets();
@@ -149,6 +152,10 @@ namespace FrogsNLogs.EditorTools
                           + " | warnings: " + summary.totalWarnings
                           + " | size: " + summary.totalSize + " bytes");
                 exitCode = summary.result == BuildResult.Succeeded ? 0 : 2;
+
+                // Nov 2026: newest versions of the Unity packages the game uses. Done last, so
+                // the next Unity launch (the play tests) picks them up cleanly.
+                if (exitCode == 0) PackageUpdater.UpdateAll();
             }
             catch (Exception e)
             {

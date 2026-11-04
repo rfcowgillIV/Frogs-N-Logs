@@ -61,6 +61,8 @@ public static class AudioManager
 
     private static void Remember(AudioSource source)
     {
+        // The new music/effects player scales its own volumes (AudioDirector.cs).
+        if (source != null && source.GetComponent<AudioDirector>() != null) return;
         if (source != null && !baseVolumes.ContainsKey(source))
         {
             baseVolumes[source] = source.volume;

@@ -35,6 +35,7 @@ public class FlyPickUp : MonoBehaviour {
 
 			//...update the score (2 per fly with the shop's "Double flies")
 			ScoreCounter.score += Shop.PointsMultiplier;
+			AudioDirector.Play ("FlyEat", 0.6f);
 
 			//...and send the fly back to the spawner to reuse later
 			// (this also lowers the count of flies that are out).

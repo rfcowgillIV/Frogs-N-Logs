@@ -122,6 +122,7 @@ public class SnakeHazard : MonoBehaviour
         }
         var m = new Material(toonShared) { hideFlags = HideFlags.HideAndDontSave };
         m.SetColor("_Color", color);
+        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", color); // URP toon shader
         if (m.HasProperty("_Shine")) m.SetFloat("_Shine", shine);
         return m;
     }
