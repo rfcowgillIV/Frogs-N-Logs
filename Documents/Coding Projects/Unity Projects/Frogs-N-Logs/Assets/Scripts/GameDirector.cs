@@ -94,7 +94,8 @@ public class GameDirector : MonoBehaviour
         tutorialSteps.Clear();
         PlayerPrefs.SetInt("FNL.tutorial", 1);
         PlayerPrefs.Save();
-        PlayRibbit(0.7f);
+        AudioDirector.Play("Croak", 0.8f);
+        AudioDirector.Play("GameOver", 0.7f);
         Shake(0.45f);
     }
 
@@ -264,6 +265,7 @@ public class GameDirector : MonoBehaviour
         }
 
         LaserReadyAt = Time.time + LaserCooldown;
+        AudioDirector.Play("Zap", 0.8f);
         if (target.GetComponent<BirdMovement>() != null)
         {
             BirdMovement.Stun(4f);
@@ -317,7 +319,11 @@ public class GameDirector : MonoBehaviour
             if (hat != null && r.transform.IsChildOf(hat.transform)) continue;
             r.GetPropertyBlock(block);
             if (tint == Color.white) block.Clear();
-            else block.SetColor("_Color", tint);
+            else
+            {
+                block.SetColor("_Color", tint);
+                block.SetColor("_BaseColor", tint);
+            }
             r.SetPropertyBlock(block);
         }
 
@@ -333,11 +339,13 @@ public class GameDirector : MonoBehaviour
     private GameObject BuildHat(string id)
     {
         // Sit the hat on top of the frog's head, and let it ride along with the head bone.
-        Transform head = FindChild(frog, "Head");
+        // Prefer the new cartoon model's head bone (names vary in case), then the old one.
+        Transform head = FindChild(frog, "head");
         Bounds bounds = new Bounds(frog.position, Vector3.one);
         bool first = true;
         foreach (Renderer r in frog.GetComponentsInChildren<Renderer>())
         {
+            if (!r.enabled) continue;
             if (first) { bounds = r.bounds; first = false; }
             else bounds.Encapsulate(r.bounds);
         }
@@ -383,16 +391,34 @@ public class GameDirector : MonoBehaviour
     {
         foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
         {
-            if (t.name.EndsWith(nameEndsWith)) return t;
+            if (t.name.EndsWith(nameEndsWith, System.StringComparison.OrdinalIgnoreCase) && IsNewModel(t)) return t;
+        }
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name.EndsWith(nameEndsWith, System.StringComparison.OrdinalIgnoreCase)) return t;
         }
         return null;
     }
 
     // ---------------------------------------------------------------- ribbit
 
-    // A frog croak made from scratch (the game had no frog voice): two quick "rib-bit" pulses.
+    private static bool IsNewModel(Transform t)
+    {
+        for (Transform p = t; p != null; p = p.parent)
+        {
+            if (p.name.EndsWith("(new model)")) return true;
+        }
+        return false;
+    }
+
+    // A real recorded ribbit (CC0, see Credits); falls back to the home-made one below.
     private void PlayRibbit(float pitch)
     {
+        if (AudioDirector.Instance != null && Resources.Load<AudioClip>("Audio/Ribbit1") != null)
+        {
+            AudioDirector.PlayRandom(0.6f, "Ribbit1", "Ribbit2", "Ribbit3");
+            return;
+        }
         if (voice == null) return;
         if (ribbit == null) ribbit = MakeRibbit();
         voice.pitch = pitch;

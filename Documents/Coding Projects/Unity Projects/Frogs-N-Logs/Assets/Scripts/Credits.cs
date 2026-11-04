@@ -1,0 +1,62 @@
+// Credits (added Nov 2026): everyone whose work is in Frogs-N-Logs.
+// Shown from the title screen (Credits) and in the credits roll when you survive the Night.
+// Keep this in sync with CREDITS.md at the top of the repository.
+public static class Credits
+{
+    public static readonly string[] Lines =
+    {
+        "<size=64><color=#8BC34A>FROGS-N-LOGS</color></size>",
+        "",
+        "<color=#FFD152>GAME DESIGN & ORIGINAL GAME (2017)</color>",
+        "Freddie Tindle-Cowgill",
+        "",
+        "<color=#FFD152>2026 REMASTER</color>",
+        "Freddie Tindle-Cowgill",
+        "with Claude (Anthropic)",
+        "",
+        "<color=#FFD152>FROG</color>",
+        "\"Frog low poly animated 3d model\" by methodical pixel",
+        "OpenGameArt.org · CC0",
+        "",
+        "<color=#FFD152>EAGLE</color>",
+        "\"Animal Pack Vol. 2\" by Quaternius",
+        "quaternius.com · CC0",
+        "",
+        "<color=#FFD152>TREES, PLANTS & ROCKS</color>",
+        "\"Stylized Nature MegaKit\" by Quaternius",
+        "quaternius.com · CC0",
+        "",
+        "<color=#FFD152>MUSIC</color>",
+        "\"Fluffing a Duck\", \"Carefree\", \"Sneaky Snitch\", \"Investigations\"",
+        "Kevin MacLeod (incompetech.com)",
+        "Licensed under Creative Commons: By Attribution 4.0 License",
+        "http://creativecommons.org/licenses/by/4.0/",
+        "",
+        "<color=#FFD152>SOUND EFFECTS</color>",
+        "\"Ribbit Frog Sounds\" & \"Frog Croaks\" by EZduzziteh · CC0",
+        "\"Gem collect SFX\" by Bobjt · CC0",
+        "\"Interface Sounds\" & \"Music Jingles\" by Kenney (kenney.nl) · CC0",
+        "\"New thing get!\" by congusbongus · CC0",
+        "\"Win Jingle\" by Fupi · CC0",
+        "\"100 CC0 SFX\" by rubberduck · CC0",
+        "\"Bird, cricket, frog and mosquito sounds\" by Aj_ · CC0",
+        "(all from OpenGameArt.org)",
+        "",
+        "<color=#FFD152>ORIGINAL 2017 SOUNDS</color>",
+        "Bird calls, footsteps, swamp ambience and fly buzz",
+        "from the original Frogs-N-Logs project",
+        "",
+        "<color=#FFD152>FONT</color>",
+        "Varela Round by Joe Prince · SIL Open Font License",
+        "",
+        "<color=#FFD152>MADE WITH</color>",
+        "Unity 6 · Universal Render Pipeline",
+        "Blender (model conversion) · GitHub Actions",
+        "",
+        "",
+        "<color=#8BC34A>Thanks for playing!</color>",
+        "Ribbit.",
+    };
+
+    public static string Text { get { return string.Join("\n", Lines); } }
+}

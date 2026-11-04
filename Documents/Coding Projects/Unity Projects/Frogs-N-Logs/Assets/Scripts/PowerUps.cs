@@ -45,6 +45,7 @@ public static class FrogEffects
 
     public static void Collect(PowerUpType type)
     {
+        AudioDirector.Play("PowerUp", 0.7f);
         switch (type)
         {
             case PowerUpType.GoldenFly:
@@ -74,6 +75,7 @@ public static class FrogEffects
         InvulnerableUntil = Time.time + 1.5f;
         StunAttacker(attacker, 2.5f);
         Say("Shield popped!");
+        AudioDirector.Play("ShieldPop", 0.8f);
         return true;
     }
 

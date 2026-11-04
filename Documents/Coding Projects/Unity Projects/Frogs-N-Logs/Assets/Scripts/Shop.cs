@@ -155,6 +155,7 @@ public static class Achievements
         new[] { "golden", "Golden touch", "Eat a golden fly" },
         new[] { "dizzy", "Dizzy bird", "Stun the bird 3 times" },
         new[] { "shopper", "Shopper", "Buy something in the shop" },
+        new[] { "survived", "Night survivor", "Survive the Night and see the credits" },
     };
 
     public static bool Has(string id) { return PlayerPrefs.GetInt("FNL.ach." + id, 0) == 1; }

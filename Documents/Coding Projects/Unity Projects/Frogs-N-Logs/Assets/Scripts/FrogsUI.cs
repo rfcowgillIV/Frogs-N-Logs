@@ -92,6 +92,7 @@ public class FrogsUI : MonoBehaviour
         var go = new GameObject("Frogs UI");
         SceneManager.MoveGameObjectToScene(go, scene);
         // The round's helpers live alongside the menus, so they all reset together.
+        go.AddComponent<Stylizer>();      // the cartoon look + new models (first, so the rest sees them)
         go.AddComponent<GameDirector>();
         go.AddComponent<LevelManager>();
         go.AddComponent<HazardSpawner>();
@@ -108,6 +109,7 @@ public class FrogsUI : MonoBehaviour
         GameState.RoundEnded += OnRoundEnded;
         FrogEffects.Announce += Toast;
         LevelManager.LevelChanged += OnLevelChanged;
+        LevelManager.Finished += OnSurvivedTheNight;
     }
 
     void OnDestroy()
@@ -118,6 +120,7 @@ public class FrogsUI : MonoBehaviour
         GameState.RoundEnded -= OnRoundEnded;
         FrogEffects.Announce -= Toast;
         LevelManager.LevelChanged -= OnLevelChanged;
+        LevelManager.Finished -= OnSurvivedTheNight;
         if (Instance == this) Instance = null;
         // Never leave the game frozen if the level unloads while paused.
         Time.timeScale = 1f;
@@ -136,12 +139,12 @@ public class FrogsUI : MonoBehaviour
             g.raycastTarget = false;
         }
         EnsureEventSystem();
-        ScreenFilter.AttachTo(Camera.main);
         BuildCanvas();
         BuildHud();
         BuildTitle();
         BuildMenu();
         BuildGameOver();
+        BuildCredits();
         RefreshAll();
 
         if (startOnNextLoad)
@@ -207,13 +210,14 @@ public class FrogsUI : MonoBehaviour
             return;
         }
 
-        if (KeyBindings.PausePressed())
+        if (KeyBindings.PausePressed() && !CreditsShowing)
         {
             if (menuPanel.activeSelf) CloseMenu();
             else if (GameState.Current != null && GameState.Current.IsPlaying) OpenMenu(true);
         }
 
         UpdateHudText();
+        UpdateCredits();
 
         if (fpsText != null)
         {
@@ -312,6 +316,7 @@ public class FrogsUI : MonoBehaviour
         play.GetComponent<Image>().color = Accent;
         play.GetComponentInChildren<Text>().color = Ink;
         MakeButton(buttons, "Settings", 24, () => OpenMenu(false), 180f, 76f);
+        MakeButton(buttons, "Credits", 24, () => ShowCredits(false), 160f, 76f);
     }
 
     private void ControlsBox(RectTransform parent, string heading, string body)
@@ -424,9 +429,10 @@ public class FrogsUI : MonoBehaviour
         if (levels != null)
         {
             int goal = levels.NextGoal;
+            string next = levels.IsFinalLevel ? "survive the night" : "reach " + LevelManager.Names[levels.Level];
             levelText.text = "Level " + levels.Level + " · " + levels.LevelName
-                             + (goal > 0 ? "     " + ScoreCounter.score + " / " + goal + " flies to "
-                                           + LevelManager.Names[levels.Level] : "     How long can you last?");
+                             + (goal > 0 ? "     " + ScoreCounter.score + " / " + goal + " flies to " + next
+                                         : "     Bonus round: how long can you last?");
         }
 
         string status = "";
@@ -445,6 +451,128 @@ public class FrogsUI : MonoBehaviour
                 zapLabel.text = wait > 0f ? Mathf.CeilToInt(wait) + "s" : "ZAP";
             }
         }
+    }
+
+    // ---------------------------------------------------------------- credits
+
+    private GameObject creditsPanel;
+    private RectTransform creditsScroll;
+    private Text creditsHeading;
+    private GameObject creditsEndButtons;
+    private bool creditsRolling;
+    private bool creditsFromEnding;
+
+    public bool CreditsShowing { get { return creditsPanel != null && creditsPanel.activeSelf; } }
+
+    private void BuildCredits()
+    {
+        creditsPanel = Panel("Credits", root, new Color(0.03f, 0.06f, 0.03f, 0.92f));
+        Stretch(creditsPanel);
+
+        creditsHeading = Label(creditsPanel.transform, "", 40, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+        Destroy(creditsHeading.GetComponent<LayoutElement>());
+        var hrt = creditsHeading.rectTransform;
+        hrt.anchorMin = new Vector2(0f, 1f);
+        hrt.anchorMax = new Vector2(1f, 1f);
+        hrt.pivot = new Vector2(0.5f, 1f);
+        hrt.anchoredPosition = new Vector2(0f, -24f);
+        hrt.sizeDelta = new Vector2(0f, 60f);
+
+        // A mask window the credits scroll through.
+        var window = new GameObject("Credits Window", typeof(RectTransform));
+        window.transform.SetParent(creditsPanel.transform, false);
+        var wrt = window.GetComponent<RectTransform>();
+        wrt.anchorMin = new Vector2(0.1f, 0.16f);
+        wrt.anchorMax = new Vector2(0.9f, 0.86f);
+        wrt.offsetMin = wrt.offsetMax = Vector2.zero;
+        window.AddComponent<RectMask2D>();
+
+        Text body = Label(window.transform, Credits.Text, 26, Soft, FontStyle.Normal, TextAnchor.UpperCenter);
+        Destroy(body.GetComponent<LayoutElement>());
+        creditsScroll = body.rectTransform;
+        creditsScroll.anchorMin = new Vector2(0f, 1f);
+        creditsScroll.anchorMax = new Vector2(1f, 1f);
+        creditsScroll.pivot = new Vector2(0.5f, 1f);
+        creditsScroll.sizeDelta = new Vector2(0f, 2400f);
+        body.lineSpacing = 1.1f;
+
+        creditsEndButtons = new GameObject("Credits Buttons", typeof(RectTransform));
+        creditsEndButtons.transform.SetParent(creditsPanel.transform, false);
+        var brt = creditsEndButtons.GetComponent<RectTransform>();
+        brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 0f);
+        brt.pivot = new Vector2(0.5f, 0f);
+        brt.anchoredPosition = new Vector2(0f, 24f);
+        var h = creditsEndButtons.AddComponent<HorizontalLayoutGroup>();
+        h.spacing = 16f;
+        h.childControlWidth = h.childControlHeight = true;
+        h.childForceExpandWidth = h.childForceExpandHeight = false;
+        var fit = creditsEndButtons.AddComponent<ContentSizeFitter>();
+        fit.horizontalFit = fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        Button keep = MakeButton(creditsEndButtons.transform, "Keep playing", 24, CloseCredits, 220f, 64f);
+        keep.GetComponent<Image>().color = Accent;
+        keep.GetComponentInChildren<Text>().color = Ink;
+        MakeButton(creditsEndButtons.transform, "Back to title", 24, () =>
+        {
+            CloseCredits();
+            if (creditsFromEnding) ReloadLevel(false);
+        }, 220f, 64f);
+        creditsPanel.SetActive(false);
+    }
+
+    // fromEnding: the roll after surviving the Night (pauses the game, offers Keep playing).
+    public void ShowCredits(bool fromEnding)
+    {
+        creditsFromEnding = fromEnding;
+        creditsHeading.text = fromEnding ? "You survived the night!" : "Credits";
+        creditsEndButtons.transform.GetChild(0).gameObject.SetActive(fromEnding);
+        creditsEndButtons.transform.GetChild(1).GetComponentInChildren<Text>().text = fromEnding ? "Back to title" : "Back";
+        creditsScroll.anchoredPosition = new Vector2(0f, -560f);
+        creditsRolling = true;
+        creditsPanel.SetActive(true);
+        GameState.MenuOpen = true;
+        if (fromEnding)
+        {
+            Time.timeScale = 0f;
+            paused = true;
+            hud.SetActive(false);
+            AudioDirector.Play("Win", 0.9f);
+        }
+        if (AudioDirector.Instance != null) AudioDirector.Instance.PlayMusic(AudioDirector.TitleTrack);
+    }
+
+    public void CloseCredits()
+    {
+        creditsPanel.SetActive(false);
+        creditsRolling = false;
+        GameState.MenuOpen = titlePanel.activeSelf && menuPanel.activeSelf;
+        if (creditsFromEnding)
+        {
+            paused = false;
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+            bool inRound = GameState.Current != null && GameState.Current.IsPlaying;
+            hud.SetActive(inRound);
+            if (inRound && AudioDirector.Instance != null) AudioDirector.Instance.PlayMusic(AudioDirector.LevelTracks[2]);
+        }
+    }
+
+    private void OnSurvivedTheNight()
+    {
+        Achievements.Unlock("survived");
+        ShowCredits(true);
+    }
+
+    private void UpdateCredits()
+    {
+        if (!creditsRolling || creditsScroll == null) return;
+        Vector2 p = creditsScroll.anchoredPosition;
+        p.y += 55f * Time.unscaledDeltaTime;          // gentle roll upward
+        if (p.y > creditsScroll.rect.height * 0.62f) p.y = -560f; // loop
+        creditsScroll.anchoredPosition = p;
+        // Scroll by hand with the mouse wheel / arrow keys too.
+        p.y -= Input.mouseScrollDelta.y * 40f;
+        creditsScroll.anchoredPosition = p;
+        if (Input.GetKeyDown(KeyCode.Escape)) CloseCredits();
     }
 
     // ---------------------------------------------------------------- game over
@@ -940,7 +1068,11 @@ public class FrogsUI : MonoBehaviour
         colors.colorMultiplier = 1.2f;
         b.colors = colors;
         b.targetGraphic = img;
-        b.onClick.AddListener(() => onClick());
+        b.onClick.AddListener(() =>
+        {
+            AudioDirector.Play("Click", 0.6f);
+            onClick();
+        });
         if (width > 0f || height > 0f)
         {
             var le = go.AddComponent<LayoutElement>();
