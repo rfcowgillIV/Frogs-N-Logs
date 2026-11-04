@@ -165,7 +165,8 @@ jobs:
             gh release upload "$tag" release/* --clobber
             gh release edit "$tag" --notes-file notes.md
           else
-            gh release create "$tag" release/* --title "Frogs-N-Logs $VERSION" --notes-file notes.md --target "$GITHUB_SHA"
+            pre=""; case "$VERSION" in *-*) pre="--prerelease" ;; esac   # e.g. 1.0.0-beta.1
+            gh release create "$tag" release/* --title "Frogs-N-Logs $VERSION" --notes-file notes.md --target "$GITHUB_SHA" $pre
           fi
           echo "### Apps published: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag" >> "$GITHUB_STEP_SUMMARY"
 
