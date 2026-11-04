@@ -19,10 +19,11 @@ public class DriftingLog : MonoBehaviour
     {
         // Start just inside one wall and roll to the opposite one.
         bool alongX = Random.value < 0.5f;
-        float lane = Random.Range(-22f, 22f);
+        float lane = Random.Range(-PlayArea.Inner(8f), PlayArea.Inner(8f));
+        float edge = PlayArea.HalfSize - 3f; // start just inside the (growing) walls
         float sign = Random.value < 0.5f ? 1f : -1f;
         Vector3 dir = alongX ? new Vector3(sign, 0f, 0f) : new Vector3(0f, 0f, sign);
-        Vector3 start = alongX ? new Vector3(-27f * sign, 0f, lane) : new Vector3(lane, 0f, -27f * sign);
+        Vector3 start = alongX ? new Vector3(-edge * sign, 0f, lane) : new Vector3(lane, 0f, -edge * sign);
 
         var root = new GameObject("Drifting Log");
         start.y = PowerUpSpawner.GroundHeight(start) + 0.5f;
@@ -58,7 +59,7 @@ public class DriftingLog : MonoBehaviour
         var drift = root.AddComponent<DriftingLog>();
         drift.direction = dir;
         drift.speed = Random.Range(1.3f, 2.2f);
-        drift.distance = 54f;
+        drift.distance = edge * 2f;
         drift.body = rb;
         drift.visual = log.transform;
         return drift;

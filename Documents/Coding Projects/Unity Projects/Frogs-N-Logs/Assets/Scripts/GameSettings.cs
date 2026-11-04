@@ -45,6 +45,19 @@ public static class GameSettings
         set { SetInt("frameRate", (int)value); }
     }
 
+    // ---- Nov 2026: mini map, helper buddy, cheats ----
+    public static bool MiniMap { get { return Flag("map", true); } set { SetFlag("map", value); } }
+    public static bool MiniMapLarge { get { return Flag("map.large", false); } set { SetFlag("map.large", value); } }
+    public static bool MapFlies { get { return Flag("map.flies", true); } set { SetFlag("map.flies", value); } }
+    public static bool MapPowerUps { get { return Flag("map.powerups", true); } set { SetFlag("map.powerups", value); } }
+    public static bool MapEnemies { get { return Flag("map.enemies", true); } set { SetFlag("map.enemies", value); } }
+    public static bool MapHazards { get { return Flag("map.hazards", true); } set { SetFlag("map.hazards", value); } }
+    public static bool MapHelper { get { return Flag("map.helper", true); } set { SetFlag("map.helper", value); } }
+    public static bool HelperOn { get { return Flag("helperOn", true); } set { SetFlag("helperOn", value); } }
+
+    public static bool Flag(string key, bool fallback) { return GetInt(key, fallback ? 1 : 0) == 1; }
+    public static void SetFlag(string key, bool value) { SetInt(key, value ? 1 : 0); }
+
     public static bool ShowFps
     {
         get { return GetInt("showFps", 0) == 1; }

@@ -175,7 +175,8 @@ public class SnakeHazard : MonoBehaviour
                 if (wanderTimer <= 0f || agent.remainingDistance < 1f)
                 {
                     wanderTimer = Random.Range(4f, 8f);
-                    Vector3 target = new Vector3(Random.Range(-24f, 24f), transform.position.y, Random.Range(-24f, 24f));
+                    Vector3 target = PlayArea.RandomPoint(6f);
+                    target.y = transform.position.y;
                     NavMeshHit hit;
                     if (NavMesh.SamplePosition(target, out hit, 5f, NavMesh.AllAreas)) agent.SetDestination(hit.position);
                 }

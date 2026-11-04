@@ -62,7 +62,7 @@ public class HazardSpawner : MonoBehaviour
         GameObject frog = GameObject.FindWithTag("Player");
         for (int i = 0; i < 25; i++)
         {
-            Vector3 p = new Vector3(Random.Range(-24f, 24f), 0f, Random.Range(-24f, 24f));
+            Vector3 p = PlayArea.RandomPoint(6f);
             p.y = PowerUpSpawner.GroundHeight(p);
             if (frog == null || Vector3.Distance(frog.transform.position, p) >= minDistance)
             {

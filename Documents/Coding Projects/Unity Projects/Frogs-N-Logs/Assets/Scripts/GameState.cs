@@ -164,7 +164,8 @@ public class GameState : MonoBehaviour {
 
 			// Nov 2026: remember the best score for this difficulty.
 			int score = ScoreCounter.score;
-			bool newBest = GameSettings.SubmitScore (GameSettings.Difficulty, score);
+			// (Not while a cheat like Super frog is on, so the real records stay fair.)
+			bool newBest = !Cheats.AffectsScore && GameSettings.SubmitScore (GameSettings.Difficulty, score);
 			if (RoundEnded != null) {
 				RoundEnded (score, newBest);
 			}

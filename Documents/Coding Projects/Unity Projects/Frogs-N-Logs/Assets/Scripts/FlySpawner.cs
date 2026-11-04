@@ -35,7 +35,12 @@ public class FlySpawner : MonoBehaviour {
 	}
 
 	public int FlyMinimum {
-		get { return DifficultyRules.FlyMinimum (GameSettings.Difficulty, totalyFlyMinimum); }
+		get {
+			int n = DifficultyRules.FlyMinimum (GameSettings.Difficulty, totalyFlyMinimum);
+			// A bigger pond gets a few more flies; the Fly frenzy cheat doubles them.
+			n += Mathf.RoundToInt ((PlayArea.HalfSize - 30f) / 3f);
+			return Cheats.FlyFrenzy ? n * 2 : n;
+		}
 	}
 
 	void Awake () {
@@ -70,8 +75,10 @@ public class FlySpawner : MonoBehaviour {
 	}
 
 	public Vector3 RandomPosition () {
-		float positionX = Random.Range(-spawnArea, spawnArea);
-		float positionZ = Random.Range(-spawnArea, spawnArea);
+		// Nov 2026: the pond grows each level (PlayArea), and the flies spread out with it.
+		float area = Mathf.Max (spawnArea, PlayArea.Inner (5f));
+		float positionX = Random.Range(-area, area);
+		float positionZ = Random.Range(-area, area);
 		return new Vector3 (positionX, 2f, positionZ);
 	}
 

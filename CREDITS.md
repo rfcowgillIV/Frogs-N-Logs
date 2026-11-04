@@ -14,8 +14,8 @@ title screen, and it rolls when you survive the Night. (Keep it in sync with
 | What | Asset | Author | Source |
 |---|---|---|---|
 | Frog (animated) | "Frog low poly animated 3d model" | methodical pixel | OpenGameArt.org |
-| Eagle (animated) | "Animal Pack Vol. 2" | Quaternius | quaternius.com |
-| Trees, bushes, flowers, mushrooms, rocks, grass | "Stylized Nature MegaKit" | Quaternius | quaternius.com |
+| Eagle, and the helper buddies: dog, cat, wolf (animated) | "Animal Pack Vol. 2" | Quaternius | quaternius.com |
+| Trees (incl. twisted and dead trees), bushes, ferns, reeds, flowers, mushrooms, rocks, grass | "Stylized Nature MegaKit" | Quaternius | quaternius.com |
 
 CC0 doesn't require credit, but they deserve it.
 

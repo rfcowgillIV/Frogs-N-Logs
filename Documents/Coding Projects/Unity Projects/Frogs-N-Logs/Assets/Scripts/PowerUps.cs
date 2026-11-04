@@ -46,6 +46,7 @@ public static class FrogEffects
     public static void Collect(PowerUpType type)
     {
         AudioDirector.Play("PowerUp", 0.7f);
+        DailyChallenge.PowerUpsThisRound++;
         switch (type)
         {
             case PowerUpType.GoldenFly:
@@ -69,6 +70,13 @@ public static class FrogEffects
     public static bool TryAbsorbHit(Collider attacker)
     {
         if (Time.time < InvulnerableUntil) return true;
+        if (Cheats.SuperFrog)
+        {
+            // Super frog can't be caught: the attacker bounces off, dizzy.
+            InvulnerableUntil = Time.time + 1f;
+            StunAttacker(attacker, 2f);
+            return true;
+        }
         if (!ShieldActive) return false;
 
         ShieldActive = false;

@@ -44,6 +44,12 @@ public static class Shop
         new Item { id = "hat.none", name = "No hat", description = "Au naturel", costs = new int[0], group = "hat" },
         new Item { id = "hat.top", name = "Top hat", description = "Very distinguished", costs = new[] { 40 }, group = "hat" },
         new Item { id = "hat.crown", name = "Crown", description = "Ruler of the pond", costs = new[] { 100 }, group = "hat" },
+        // Nov 2026: helper buddies (they chase the bird and snake away) and their training.
+        new Item { id = "helper.dog", name = "Biscuit the dog", description = "Your loyal helper buddy", costs = new int[0], group = "helper" },
+        new Item { id = "helper.cat", name = "Marmalade the cat", description = "Quick to pounce", costs = new[] { 90 }, group = "helper" },
+        new Item { id = "helper.wolf", name = "Shadow the wolf", description = "Scares predators longer", costs = new[] { 180 }, group = "helper" },
+        new Item { id = "helper.training", name = "Buddy training", description = "Helper recovers faster", costs = new[] { 30, 60, 120 }, group = "upgrade" },
+        new Item { id = "helper.guard", name = "Guard zone", description = "Helper guards a bigger area", costs = new[] { 25, 55, 100 }, group = "upgrade" },
     };
 
     // ---- wallet ----
@@ -109,20 +115,38 @@ public static class Shop
         if (item == null || !Owns(id)) return;
         if (item.group == "skin") PlayerPrefs.SetString("FNL.skin", id);
         if (item.group == "hat") PlayerPrefs.SetString("FNL.hat", id);
+        if (item.group == "helper") PlayerPrefs.SetString("FNL.helper", id);
         Notify(true);
     }
 
-    public static bool IsEquipped(string id) { return EquippedSkin == id || EquippedHat == id; }
+    public static string EquippedHelper { get { return PlayerPrefs.GetString("FNL.helper", "helper.dog"); } }
+
+    public static bool IsEquipped(string id) { return EquippedSkin == id || EquippedHat == id || EquippedHelper == id; }
+
+    // ---- helper buddy ----
+    public static float HelperCooldown { get { return new[] { 12f, 9f, 7f, 5f }[Mathf.Clamp(LevelOf("helper.training"), 0, 3)]; } }
+    public static float HelperGuardRadius { get { return 6f + 2f * LevelOf("helper.guard"); } }
+
+    // Cheats and rewards (daily challenge) add flies without touching the score.
+    public static void Grant(int flies)
+    {
+        if (flies <= 0) return;
+        Wallet += flies;
+        Notify(true);
+    }
+
+    public static void NotifyChanged() { Notify(true); }
 
     // ---- what the upgrades do ----
-    public static float SpeedMultiplier { get { return 1f + 0.08f * LevelOf("speed"); } }
+    public static float SpeedMultiplier { get { return (1f + 0.08f * LevelOf("speed")) * (Cheats.SuperFrog ? Cheats.SuperSpeed : 1f); } }
     public static int PointsMultiplier { get { return Owns("double") ? 2 : 1; } }
-    public static bool HasLaser { get { return Owns("laser"); } }
+    public static bool HasLaser { get { return Owns("laser") || Cheats.SuperFrog; } }
 
     public static float MagnetRadius
     {
         get
         {
+            if (Cheats.SuperFrog) return Cheats.SuperMagnet;
             switch (LevelOf("magnet"))
             {
                 case 1: return 3.5f;
@@ -156,6 +180,9 @@ public static class Achievements
         new[] { "dizzy", "Dizzy bird", "Stun the bird 3 times" },
         new[] { "shopper", "Shopper", "Buy something in the shop" },
         new[] { "survived", "Night survivor", "Survive the Night and see the credits" },
+        new[] { "combo", "Combo king", "Reach an x8 fly combo" },
+        new[] { "buddy", "Best buddy", "Your helper chases off 5 predators" },
+        new[] { "daily", "Daily hopper", "Finish a daily challenge" },
     };
 
     public static bool Has(string id) { return PlayerPrefs.GetInt("FNL.ach." + id, 0) == 1; }

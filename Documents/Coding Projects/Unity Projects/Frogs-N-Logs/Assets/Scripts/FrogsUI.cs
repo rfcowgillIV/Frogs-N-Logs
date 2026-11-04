@@ -93,6 +93,7 @@ public class FrogsUI : MonoBehaviour
         SceneManager.MoveGameObjectToScene(go, scene);
         // The round's helpers live alongside the menus, so they all reset together.
         go.AddComponent<Stylizer>();      // the cartoon look + new models (first, so the rest sees them)
+        go.AddComponent<PlayArea>();      // the pond grows each level
         go.AddComponent<GameDirector>();
         go.AddComponent<LevelManager>();
         go.AddComponent<HazardSpawner>();
@@ -141,6 +142,7 @@ public class FrogsUI : MonoBehaviour
         EnsureEventSystem();
         BuildCanvas();
         BuildHud();
+        MiniMap.Create(root, font);
         BuildTitle();
         BuildMenu();
         BuildGameOver();
@@ -308,6 +310,9 @@ public class FrogsUI : MonoBehaviour
             Image img = b.GetComponent<Image>();
             refreshers.Add(() => SetSelected(img, GameSettings.Difficulty == captured));
         }
+        Text daily = Label(card, "", 19, Soft, FontStyle.Normal, TextAnchor.MiddleCenter);
+        refreshers.Add(() => daily.text = "<color=#8BC34A><b>TODAY'S CHALLENGE</b></color>  " + DailyChallenge.Goal
+            + (DailyChallenge.Done ? "   <color=#FFD152>Done!</color>" : "   <color=#9EB394>(+" + DailyChallenge.Reward + " flies)</color>"));
         titleDifficultyText = Label(card, "", 20, Muted, FontStyle.Italic, TextAnchor.MiddleCenter);
         titleBestText = Label(card, "", 22, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
         refreshers.Add(() =>
@@ -456,6 +461,8 @@ public class FrogsUI : MonoBehaviour
         if (FrogEffects.Boosted) status += "Speed boost " + Mathf.CeilToInt(FrogEffects.BoostSecondsLeft) + "s   ";
         if (FrogEffects.ShieldActive) status += "Lily-pad shield up   ";
         if (BirdMovement.IsStunned) status += "Bird is dizzy!   ";
+        if (GameDirector.Instance != null && GameDirector.Instance.Combo >= 2) status += "Combo x" + GameDirector.Instance.Combo + "   ";
+        if (Cheats.Enabled) status += "<color=#FF9EE5>Cheats on</color>   ";
         statusText.text = status.TrimEnd();
 
         if (zapButton != null)
@@ -630,10 +637,10 @@ public class FrogsUI : MonoBehaviour
         menuTitle = Label(card, "Paused", 46, Accent, FontStyle.Bold, TextAnchor.MiddleCenter);
 
         RectTransform tabRow = Row("Tabs", card, 8f);
-        foreach (string name in new[] { "Shop", "Sound", "Graphics", "Controls", "Game" })
+        foreach (string name in new[] { "Shop", "Sound", "Graphics", "Controls", "Extras", "Cheats", "Game" })
         {
             string captured = name;
-            Button b = MakeButton(tabRow, name, 22, () => ShowTab(captured), 146f, 50f);
+            Button b = MakeButton(tabRow, name, 19, () => ShowTab(captured), 103f, 50f);
             tabButtons[name] = b.GetComponent<Image>();
         }
 
@@ -648,6 +655,8 @@ public class FrogsUI : MonoBehaviour
         tabs["Sound"] = BuildSoundTab(content.transform);
         tabs["Graphics"] = BuildGraphicsTab(content.transform);
         tabs["Controls"] = BuildControlsTab(content.transform);
+        tabs["Extras"] = BuildExtrasTab(content.transform);
+        tabs["Cheats"] = BuildCheatsTab(content.transform);
         tabs["Game"] = BuildGameTab(content.transform);
 
         RectTransform bottom = Row("Menu Buttons", card, 14f);
@@ -662,11 +671,32 @@ public class FrogsUI : MonoBehaviour
         ShowTab(currentTab);
     }
 
+    // Nov 2026: every tab scrolls (drag, swipe or mouse wheel), so a tab with lots in it
+    // still fits on small screens. Returns the scrolling content.
     private GameObject TabPage(Transform parent, string name)
     {
-        var page = new GameObject(name + " Tab", typeof(RectTransform));
-        page.transform.SetParent(parent, false);
-        Stretch(page);
+        var viewport = new GameObject(name + " Tab", typeof(RectTransform));
+        viewport.transform.SetParent(parent, false);
+        Stretch(viewport);
+        viewport.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.001f); // catches drags
+        viewport.AddComponent<RectMask2D>();
+        var scroll = viewport.AddComponent<ScrollRect>();
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity = 30f;
+
+        var page = new GameObject("Content", typeof(RectTransform));
+        page.transform.SetParent(viewport.transform, false);
+        var prt = page.GetComponent<RectTransform>();
+        prt.anchorMin = new Vector2(0f, 1f);
+        prt.anchorMax = new Vector2(1f, 1f);
+        prt.pivot = new Vector2(0.5f, 1f);
+        prt.anchoredPosition = Vector2.zero;
+        prt.sizeDelta = Vector2.zero;
+        page.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        scroll.viewport = viewport.GetComponent<RectTransform>();
+        scroll.content = prt;
         var v = page.AddComponent<VerticalLayoutGroup>();
         v.spacing = 12f;
         v.childAlignment = TextAnchor.UpperCenter;
@@ -696,7 +726,7 @@ public class FrogsUI : MonoBehaviour
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = 2;
         grid.childAlignment = TextAnchor.UpperCenter;
-        gridGo.AddComponent<LayoutElement>().preferredHeight = 6 * 57f;
+        gridGo.AddComponent<LayoutElement>().preferredHeight = Mathf.CeilToInt(Shop.Items.Length / 2f) * 57f;
 
         foreach (Shop.Item item in Shop.Items)
         {
@@ -736,7 +766,9 @@ public class FrogsUI : MonoBehaviour
                 }
                 else
                 {
-                    buyText.text = owned ? (Shop.IsEquipped(captured.id) ? "Wearing" : "Wear") : "Buy " + Shop.NextCost(captured);
+                    bool buddy = captured.group == "helper";
+                    buyText.text = owned ? (Shop.IsEquipped(captured.id) ? (buddy ? "With you" : "Wearing") : (buddy ? "Bring" : "Wear"))
+                                         : "Buy " + Shop.NextCost(captured);
                 }
                 bool affordable = Shop.IsMaxed(captured) || owned || Shop.Wallet >= Shop.NextCost(captured);
                 SetSelected(buyImage, Shop.IsEquipped(captured.id) || (captured.group == "upgrade" && Shop.IsMaxed(captured)));
@@ -846,6 +878,111 @@ public class FrogsUI : MonoBehaviour
         return page;
     }
 
+    // Nov 2026: helper buddy and mini map options.
+    private GameObject BuildExtrasTab(Transform parent)
+    {
+        GameObject page = TabPage(parent, "Extras");
+        RectTransform rt = page.GetComponent<RectTransform>();
+        page.GetComponent<VerticalLayoutGroup>().spacing = 8f;
+
+        Label(rt, "HELPER BUDDY", 18, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+        ToggleRow(rt, "Bring a helper buddy (chases the bird and snakes away)", () => GameSettings.HelperOn, on => GameSettings.HelperOn = on);
+        Text buddyNote = Label(rt, "", 17, Muted, FontStyle.Italic, TextAnchor.MiddleLeft);
+        refreshers.Add(() =>
+        {
+            Shop.Item buddy = Shop.Find(Shop.EquippedHelper);
+            buddyNote.text = (buddy != null ? buddy.name : "Biscuit the dog") + " is with you. Get more buddies and training in the Shop.";
+        });
+
+        Label(rt, "MINI MAP", 18, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+        ToggleRow(rt, "Show the mini map (tap it to make it bigger)", () => GameSettings.MiniMap, on => GameSettings.MiniMap = on);
+        Label(rt, "Show on the map:", 18, Soft, FontStyle.Normal, TextAnchor.MiddleLeft);
+        var gridGo = new GameObject("Map Dots", typeof(RectTransform));
+        gridGo.transform.SetParent(rt, false);
+        var grid = gridGo.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(240f, 46f);
+        grid.spacing = new Vector2(8f, 8f);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 3;
+        grid.childAlignment = TextAnchor.UpperLeft;
+        gridGo.AddComponent<LayoutElement>().preferredHeight = 100f;
+        DotToggle(gridGo.transform, "Flies", () => GameSettings.MapFlies, on => GameSettings.MapFlies = on);
+        DotToggle(gridGo.transform, "Power-ups", () => GameSettings.MapPowerUps, on => GameSettings.MapPowerUps = on);
+        DotToggle(gridGo.transform, "Bird & snakes", () => GameSettings.MapEnemies, on => GameSettings.MapEnemies = on);
+        DotToggle(gridGo.transform, "Drifting logs", () => GameSettings.MapHazards, on => GameSettings.MapHazards = on);
+        DotToggle(gridGo.transform, "Helper buddy", () => GameSettings.MapHelper, on => GameSettings.MapHelper = on);
+        DotToggle(gridGo.transform, "Big map", () => GameSettings.MiniMapLarge, on => GameSettings.MiniMapLarge = on);
+        return page;
+    }
+
+    private void DotToggle(Transform parent, string label, Func<bool> get, Action<bool> set)
+    {
+        Button b = MakeButton(parent, "", 19, () => set(!get()), 0f, 0f);
+        Text t = b.GetComponentInChildren<Text>();
+        Image img = b.GetComponent<Image>();
+        refreshers.Add(() =>
+        {
+            bool on = get();
+            t.text = label + (on ? ": On" : ": Off");
+            SetSelected(img, on);
+        });
+    }
+
+    // Nov 2026: optional cheats (see Cheats.cs).
+    private GameObject BuildCheatsTab(Transform parent)
+    {
+        GameObject page = TabPage(parent, "Cheats");
+        RectTransform rt = page.GetComponent<RectTransform>();
+        page.GetComponent<VerticalLayoutGroup>().spacing = 8f;
+
+        ToggleRow(rt, "Turn on cheats", () => Cheats.Enabled, on => Cheats.Enabled = on);
+        Text note = Label(rt, "", 17, Muted, FontStyle.Italic, TextAnchor.MiddleLeft);
+        refreshers.Add(() => note.text = Cheats.Enabled
+            ? "Have fun! Best scores aren't saved while Super frog, Slow bird or Fly frenzy is on."
+            : "For when you just want to unlock everything and play around.");
+
+        var actions = new List<Button>();
+        Label(rt, "UNLOCK", 18, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+        RectTransform row1 = Row("Unlock", rt, 8f);
+        actions.Add(MakeButton(row1, "Unlock everything", 19, () => { Cheats.UnlockEverything(); Toast("Everything in the shop is yours!"); }, 245f, 50f));
+        actions.Add(MakeButton(row1, "+1000 flies", 19, () => { Cheats.AddFlies(1000); Toast("+1000 flies in your wallet"); }, 245f, 50f));
+        actions.Add(MakeButton(row1, "All achievements", 19, () => { Cheats.UnlockAllAchievements(); Toast("Every achievement unlocked"); }, 245f, 50f));
+        RectTransform row2 = Row("Levels", rt, 8f);
+        actions.Add(MakeButton(row2, "Skip to the next level", 19, () =>
+        {
+            if (GameState.Current == null || !GameState.Current.IsPlaying) Toast("Start a round first, then skip ahead");
+            else if (!Cheats.SkipLevel()) Toast("You're already on the last level");
+            else CloseMenu();
+        }, 320f, 50f));
+
+        Label(rt, "WHILE YOU PLAY", 18, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+        var gridGo = new GameObject("Cheat Toggles", typeof(RectTransform));
+        gridGo.transform.SetParent(rt, false);
+        var grid = gridGo.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(240f, 46f);
+        grid.spacing = new Vector2(8f, 8f);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 3;
+        gridGo.AddComponent<LayoutElement>().preferredHeight = 46f;
+        DotToggle(gridGo.transform, "Super frog", () => Cheats.SuperFrog, on => Cheats.SuperFrog = on);
+        DotToggle(gridGo.transform, "Slow bird", () => Cheats.SlowBird, on => Cheats.SlowBird = on);
+        DotToggle(gridGo.transform, "Fly frenzy", () => Cheats.FlyFrenzy, on => Cheats.FlyFrenzy = on);
+        foreach (Button b in gridGo.GetComponentsInChildren<Button>()) actions.Add(b);
+        Label(rt, "Super frog: 60% faster, can't be caught, giant fly magnet, quick laser.", 16, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
+
+        refreshers.Add(() =>
+        {
+            foreach (Button b in actions)
+            {
+                b.interactable = Cheats.Enabled;
+                var group = b.GetComponent<CanvasGroup>();
+                if (group == null) group = b.gameObject.AddComponent<CanvasGroup>();
+                group.alpha = Cheats.Enabled ? 1f : 0.35f;
+            }
+        });
+        return page;
+    }
+
     private GameObject BuildGameTab(Transform parent)
     {
         GameObject page = TabPage(parent, "Game");
@@ -901,7 +1038,10 @@ public class FrogsUI : MonoBehaviour
         currentTab = name;
         foreach (KeyValuePair<string, GameObject> pair in tabs)
         {
-            pair.Value.SetActive(pair.Key == name);
+            ScrollRect scroll = pair.Value.GetComponentInParent<ScrollRect>(true);
+            GameObject page = scroll != null ? scroll.gameObject : pair.Value;
+            page.SetActive(pair.Key == name);
+            if (scroll != null && pair.Key == name) scroll.verticalNormalizedPosition = 1f;
         }
         foreach (KeyValuePair<string, Image> pair in tabButtons)
         {
