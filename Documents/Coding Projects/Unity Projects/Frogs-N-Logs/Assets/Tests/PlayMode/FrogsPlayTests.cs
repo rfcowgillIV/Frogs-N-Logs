@@ -930,9 +930,9 @@ namespace FrogsNLogs.Tests
                 var scaler = GameObject.Find("Frogs UI Canvas").GetComponent<CanvasScaler>();
                 Assert.AreEqual(new Vector2(720f, 1280f), scaler.referenceResolution, "Menus should use the portrait layout");
                 Assert.Greater(Camera.main.fieldOfView, landscapeFov + 5f, "The view should widen so you can see the sides");
-                yield return PortraitScreenshot("15-portrait-title");
-
-                // Every menu card fits inside the screen once fitted.
+                // Every menu card fits inside the screen once fitted (checked before the
+                // screenshot, which briefly changes the canvas size).
+                yield return null;
                 foreach (Component fit in Object.FindObjectsByType(GameType("FitToParent"), FindObjectsInactive.Exclude, FindObjectsSortMode.None).Cast<Component>())
                 {
                     var rt = (RectTransform)fit.transform;
@@ -941,6 +941,9 @@ namespace FrogsNLogs.Tests
                     Assert.LessOrEqual(w, parent.rect.width + 1f, fit.name + " is too wide for the screen");
                     Assert.LessOrEqual(h, parent.rect.height + 1f, fit.name + " is too tall for the screen");
                 }
+                yield return PortraitScreenshot("15-portrait-title");
+                yield return null;
+                yield return null;
 
                 yield return StartGame();
                 yield return new WaitForSeconds(1f);
