@@ -6,10 +6,10 @@ Shader "Frogs/ToonWater"
 {
     Properties
     {
-        _ShallowColor ("Shallow", Color) = (0.36, 0.78, 0.86, 0.75)
-        _DeepColor ("Deep", Color) = (0.12, 0.42, 0.66, 0.85)
-        _RippleColor ("Ripples", Color) = (0.85, 0.97, 1, 0.9)
-        _RippleScale ("Ripple size", Float) = 0.35
+        _ShallowColor ("Shallow", Color) = (0.45, 0.78, 0.80, 0.38)
+        _DeepColor ("Deep", Color) = (0.20, 0.50, 0.62, 0.52)
+        _RippleColor ("Ripples", Color) = (0.88, 0.97, 1, 0.9)
+        _RippleScale ("Ripple size", Float) = 1.1
         _Speed ("Speed", Float) = 0.6
     }
     SubShader
@@ -62,11 +62,13 @@ Shader "Frogs/ToonWater"
                 half4 col = lerp(_DeepColor, _ShallowColor, pools);
                 // crisp cartoon ripple bands
                 float bands = sin((p.x + sin(p.y * 1.3 + t) * 0.6) * 3.0 + t * 2.0);
-                float ripple = smoothstep(0.92, 0.98, bands);
+                float ripple = smoothstep(0.975, 0.995, bands);
                 // twinkling sparkles
                 float2 cell = floor(p * 3.0);
                 float sparkle = step(0.985, hash21(cell)) * (0.5 + 0.5 * sin(t * 6.0 + hash21(cell + 3.1) * 6.28));
-                col.rgb = lerp(col.rgb, _RippleColor.rgb, saturate(ripple * 0.6 + sparkle));
+                half glint = saturate(ripple * 0.3 + sparkle * 0.7);
+                col.rgb = lerp(col.rgb, _RippleColor.rgb, glint);
+                col.a = saturate(col.a + glint * 0.3);
                 Light l = GetMainLight();
                 col.rgb *= lerp(0.6, 1.1, saturate(l.direction.y)) * l.color;
                 col.rgb = MixFog(col.rgb, i.fog);

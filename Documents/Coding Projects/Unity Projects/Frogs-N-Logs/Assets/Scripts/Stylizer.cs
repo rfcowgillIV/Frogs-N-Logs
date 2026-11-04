@@ -143,9 +143,25 @@ public class Stylizer : MonoBehaviour
     private static void FixParticles(ParticleSystemRenderer r)
     {
         Material m = r.sharedMaterial;
-        if (m != null && m.shader != null && m.shader.isSupported && m.shader.name.StartsWith("Universal Render Pipeline/")) return;
-        Material fallback = Resources.Load<Material>("Generated/ParticleURP");
-        if (fallback != null) r.sharedMaterial = fallback;
+        bool ok = m != null && m.shader != null && m.shader.isSupported && m.shader.name.StartsWith("Universal Render Pipeline/");
+        if (!ok)
+        {
+            Material fallback = Resources.Load<Material>("Generated/ParticleURP");
+            if (fallback != null) r.sharedMaterial = fallback;
+        }
+        // The drifting dust was a faint haze in 2017; keep it faint under URP too.
+        if (r.GetComponentInParent<Transform>().name.IndexOf("Dust", System.StringComparison.OrdinalIgnoreCase) >= 0
+            || r.transform.root.name.IndexOf("Dust", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            Material faint = new Material(r.sharedMaterial) { hideFlags = HideFlags.DontSave };
+            if (faint.HasProperty("_BaseColor"))
+            {
+                Color c = faint.GetColor("_BaseColor");
+                c.a *= 0.25f;
+                faint.SetColor("_BaseColor", c);
+            }
+            r.sharedMaterial = faint;
+        }
     }
 
     // ------------------------------------------------------------ lighting + look
@@ -204,9 +220,9 @@ public class Stylizer : MonoBehaviour
     private void SwapCharacters()
     {
         GameObject frog = GameObject.FindWithTag("Player");
-        if (frog != null) CharacterVisual.Attach(frog, "Frog", "walk", "idle", 0f, 1.0f, 0f);
+        if (frog != null) CharacterVisual.Attach(frog, "Frog", "walk", "idle", 0f, 2.3f, 0f);
 
         BirdMovement bird = FindFirstObjectByType<BirdMovement>();
-        if (bird != null) CharacterVisual.Attach(bird.gameObject, "Eagle", "Flying", "Idle", 0f, 1.35f, 0.7f);
+        if (bird != null) CharacterVisual.Attach(bird.gameObject, "Eagle", "Flying", "Idle", 0f, 0.45f, 0.7f);
     }
 }

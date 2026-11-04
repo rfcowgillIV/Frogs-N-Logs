@@ -99,9 +99,15 @@ public class CharacterVisual : MonoBehaviour
         Animator oldAnimator = GetComponent<Animator>();
         if (oldAnimator != null) oldAnimator.cullingMode = AnimatorCullingMode.CullCompletely;
 
+        Texture2D skin = Resources.Load<Texture2D>("Characters/Textures/" + modelName.ToLowerInvariant());
         foreach (Renderer r in Visual.GetComponentsInChildren<Renderer>(true))
         {
             Stylizer.ToToon(r);
+            // If the model's own material lost its texture link, use its texture directly.
+            if (skin != null && r.sharedMaterial != null && r.sharedMaterial.HasProperty("_BaseMap") && r.sharedMaterial.GetTexture("_BaseMap") == null)
+            {
+                r.sharedMaterial = Stylizer.Toon(skin, Color.white, 0f, false, 0.5f);
+            }
             if (r is SkinnedMeshRenderer) ((SkinnedMeshRenderer)r).updateWhenOffscreen = true;
         }
 

@@ -82,6 +82,8 @@ public class AudioDirector : MonoBehaviour
     private void ApplyVolumes()
     {
         if (activeMusic != null && crossfade == null) activeMusic.volume = MusicLevel * MusicScale;
+        // Muting takes effect straight away, even in the middle of a crossfade.
+        if (MusicScale <= 0f) { musicA.volume = 0f; musicB.volume = 0f; }
         ambience.volume = ambienceLevel * MusicScale;
     }
 
@@ -187,12 +189,12 @@ public class AudioDirector : MonoBehaviour
     {
         activeMusic = to;
         fade = 0f;
-        float startFrom = from.volume;
+        float startFrom = MusicScale > 0f ? from.volume / MusicScale : 0f;
         while (fade < 1f)
         {
             fade = Mathf.Min(1f, fade + Time.unscaledDeltaTime / 1.2f);
             to.volume = fade * MusicLevel * MusicScale;
-            if (from != to) from.volume = (1f - fade) * startFrom;
+            if (from != to) from.volume = (1f - fade) * startFrom * MusicScale;
             yield return null;
         }
         if (from != to) from.Stop();
