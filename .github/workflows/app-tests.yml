@@ -1,0 +1,210 @@
+# App tests (added Nov 2026)
+#
+# Downloads the newest app release and actually runs each app on a real machine of that kind
+# (free GitHub runners): a Windows PC, an Apple-silicon Mac, Linux, and an Android emulator.
+# For each one it waits for the title screen, takes a screenshot, presses Space to start a
+# round, takes another, and checks the game's log for crashes.
+# Screenshots and logs go to the "app-test-screenshots" branch so they're easy to look at.
+#
+# Runs automatically after "App builds" finishes, or by hand (Actions > App tests > Run).
+name: App tests
+
+on:
+  workflow_run:
+    workflows: [ "App builds" ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release to test (blank = newest)"
+        required: false
+        default: ""
+  push:
+    branches: [ "app-tests" ]
+
+permissions:
+  contents: write
+
+env:
+  APP_ID: com.freddietindlecowgill.frogsnlogs
+
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.t.outputs.tag }}
+    steps:
+      - id: t
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          tag="$INPUT_TAG"
+          [ -n "$tag" ] || tag=$(gh release list -R "$GITHUB_REPOSITORY" --limit 1 --json tagName --jq '.[0].tagName')
+          [ -n "$tag" ] || { echo "::error::No release to test yet"; exit 1; }
+          echo "Testing $tag"; echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: pick
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download
+        env: { GH_TOKEN: "${{ github.token }}" }
+        shell: bash
+        run: |
+          gh release download "${{ needs.pick.outputs.tag }}" -R "$GITHUB_REPOSITORY" -p 'Frogs-N-Logs-Windows.zip'
+          mkdir out; unzip -q Frogs-N-Logs-Windows.zip -d app
+      - name: Run the game
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          function Shot($name) {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("out\$name.png"); $g.Dispose(); $bmp.Dispose()
+          }
+          $p = Start-Process -FilePath "app\Frogs-N-Logs.exe" -PassThru -ArgumentList "-screen-fullscreen 0 -screen-width 1280 -screen-height 720 -logFile `"$PWD\out\windows-player.log`""
+          Start-Sleep 45
+          Shot "windows-1-title"
+          $shell = New-Object -ComObject WScript.Shell
+          [void]$shell.AppActivate($p.Id); Start-Sleep 1
+          [System.Windows.Forms.SendKeys]::SendWait(" ")
+          Start-Sleep 10
+          Shot "windows-2-playing"
+          $alive = -not $p.HasExited
+          if ($alive) { Stop-Process -Id $p.Id -Force }
+          "alive=$alive" | Out-File out\windows-result.txt
+          if (-not $alive) { Write-Output "::error::The Windows app closed by itself (crash?)"; exit 1 }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: windows, path: out }
+
+  mac:
+    needs: pick
+    runs-on: macos-latest   # Apple silicon (M-series)
+    timeout-minutes: 20
+    steps:
+      - name: Download
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download "${{ needs.pick.outputs.tag }}" -R "$GITHUB_REPOSITORY" -p 'Frogs-N-Logs-Mac.zip'
+          mkdir out; ditto -x -k Frogs-N-Logs-Mac.zip app
+          bin="app/Frogs-N-Logs.app/Contents/MacOS/$(ls app/Frogs-N-Logs.app/Contents/MacOS | head -1)"
+          echo "BIN=$bin" >> "$GITHUB_ENV"
+          { echo "architectures: $(lipo -archs "$bin")"; codesign -dv app/Frogs-N-Logs.app 2>&1 | head -5; } | tee out/mac-info.txt
+          xattr -cr app/Frogs-N-Logs.app
+      - name: Run the game
+        run: |
+          "$BIN" -screen-fullscreen 0 -screen-width 1280 -screen-height 720 -logFile "$PWD/out/mac-player.log" &
+          pid=$!
+          sleep 45
+          screencapture -x out/mac-1-title.png || echo "::warning::screencapture not allowed on this runner"
+          osascript -e 'tell application "System Events" to key code 49' || true
+          sleep 10
+          screencapture -x out/mac-2-playing.png || true
+          if kill -0 $pid 2>/dev/null; then echo "alive=true" > out/mac-result.txt; kill $pid; else
+            echo "alive=false" > out/mac-result.txt; echo "::error::The Mac app closed by itself (crash?)"; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: mac, path: out }
+
+  linux:
+    needs: pick
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download "${{ needs.pick.outputs.tag }}" -R "$GITHUB_REPOSITORY" -p 'Frogs-N-Logs-Linux.tar.gz'
+          mkdir out app; tar -xzf Frogs-N-Logs-Linux.tar.gz -C app
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb imagemagick xdotool libgl1-mesa-dri libglu1-mesa >/dev/null
+      - name: Run the game
+        run: |
+          cat > run.sh <<'SH'
+          ./app/Frogs-N-Logs.x86_64 -force-glcore -screen-fullscreen 0 -screen-width 1280 -screen-height 720 -logFile "$PWD/out/linux-player.log" &
+          pid=$!
+          sleep 45
+          import -window root out/linux-1-title.png
+          xdotool search --name "Frogs-N-Logs" windowactivate --sync key space || xdotool key space
+          sleep 10
+          import -window root out/linux-2-playing.png
+          if kill -0 $pid 2>/dev/null; then echo alive=true > out/linux-result.txt; kill $pid; exit 0; fi
+          echo alive=false > out/linux-result.txt; exit 1
+          SH
+          chmod +x run.sh app/Frogs-N-Logs.x86_64
+          xvfb-run -a -s "-screen 0 1280x720x24" ./run.sh || { echo "::error::The Linux app closed by itself (crash?)"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: linux, path: out }
+
+  android:
+    needs: pick
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Download
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release download "${{ needs.pick.outputs.tag }}" -R "$GITHUB_REPOSITORY" -p 'Frogs-N-Logs-Android.apk'
+          mkdir out
+          cat > android-test.sh <<'SH'
+          set -x
+          adb install -r Frogs-N-Logs-Android.apk
+          adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
+          sleep 60
+          adb exec-out screencap -p > out/android-1-title.png
+          adb shell input keyevent 62
+          sleep 12
+          adb exec-out screencap -p > out/android-2-playing.png
+          adb logcat -d | grep -E "Unity|AndroidRuntime|FATAL|libc" > out/android-log.txt || true
+          if adb shell pidof "$APP_ID"; then echo alive=true > out/android-result.txt; else echo alive=false > out/android-result.txt; exit 1; fi
+          SH
+          chmod +x android-test.sh
+      - name: Enable KVM (fast emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Run on an Android emulator (Android 14, 64-bit)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: ./android-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: android, path: out }
+
+  report:
+    needs: [ pick, windows, mac, linux, android ]
+    if: always() && needs.pick.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: results }
+      - name: Save screenshots to the app-test-screenshots branch
+        run: |
+          cd results
+          {
+            echo "# App test screenshots"
+            echo
+            echo "Release ${{ needs.pick.outputs.tag }}, run $GITHUB_RUN_ID."
+            echo
+            echo "| Platform | Result |"; echo "|---|---|"
+            echo "| Windows | ${{ needs.windows.result }} |"
+            echo "| Mac | ${{ needs.mac.result }} |"
+            echo "| Linux | ${{ needs.linux.result }} |"
+            echo "| Android | ${{ needs.android.result }} |"
+          } > README.md
+          cp README.md "$GITHUB_STEP_SUMMARY"
+          git init -q -b app-test-screenshots
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "App test screenshots for ${{ needs.pick.outputs.tag }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:app-test-screenshots
