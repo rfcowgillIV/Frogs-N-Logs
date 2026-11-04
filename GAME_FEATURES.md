@@ -50,3 +50,28 @@ hat, achievements, and whether you've seen the tutorial (`PlayerPrefs`, stored i
 `Assets/Tests/PlayMode/FrogsPlayTests.cs` now covers the title screen, responsiveness, pause,
 difficulty, saved settings, levels/hazards, every power-up, the shop, magnet, laser and hats,
 on top of the original level/start/fly/Game Over checks.
+
+## Round 4 (Nov 2026): bigger pond, mini map, helper buddies, cheats
+
+- **The pond grows.** The Pond is the original 60 × 60 m. Reaching the Swamp opens it to
+  78 × 78 m (twisted trees and tall reeds), and Night opens it to 94 × 94 m (bare trees, ferns
+  and big mushrooms). The walls slide outward, and flies, power-ups, snakes and logs spread out
+  with them (a bigger pond also gets a few more flies). `PlayArea.cs`
+- **Mini map** (top right). It's a real top-down snapshot of the pond, retaken whenever the
+  pond grows or the level changes. Dots show you (an arrow), your helper, the bird, snakes,
+  logs, flies and power-ups. Tap it to make it bigger. Pause → Extras turns the map and each
+  kind of dot on or off. `MiniMap.cs`
+- **Helper buddy.** Biscuit the dog trots beside you and dashes at the bird or a snake when it
+  gets close, knocking it back and leaving it dizzy, then needs a few seconds to recover. You
+  can buy Marmalade the cat (fastest) and Shadow the wolf (longest scare), plus Buddy training
+  (recovers faster) and Guard zone (guards a bigger area). Turn it off in Pause → Extras.
+  `HelperBuddy.cs`
+- **Cheats** (Pause → Cheats, off by default): Unlock everything, +1000 flies, All
+  achievements, Skip to the next level, Super frog (faster, can't be caught, giant magnet,
+  quick laser), Slow bird and Fly frenzy. Best scores aren't saved while Super frog, Slow bird
+  or Fly frenzy is on. `Cheats.cs`
+- **Fly combos.** Eat flies within 2.5 s of each other: x3 = +1 bonus fly, x5 = +2, x8 (and
+  every 4 after) = +3.
+- **Daily challenge** on the title screen (a new goal every day, +40 flies).
+- New achievements: Combo king, Best buddy, Daily hopper.
+- Every menu tab now scrolls, so the bigger Shop fits on small screens.

@@ -159,7 +159,7 @@ jobs:
           adb shell input keyevent 62
           sleep 12
           adb exec-out screencap -p > out/android-2-playing.png
-          adb logcat -d | grep -E "Unity|AndroidRuntime|FATAL|libc" > out/android-log.txt || true
+          adb logcat -d | grep -E "Unity|AndroidRuntime|FATAL|libc|DEBUG|linker|dlopen|frogsnlogs" | grep -v nativeloader > out/android-log.txt || true
           if adb shell pidof "$APP_ID"; then echo alive=true > out/android-result.txt; else echo alive=false > out/android-result.txt; exit 1; fi
           SH
           chmod +x android-test.sh

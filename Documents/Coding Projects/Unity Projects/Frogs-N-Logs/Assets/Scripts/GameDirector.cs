@@ -17,7 +17,7 @@ public class GameDirector : MonoBehaviour
     private float roundTime;
 
     // ---- laser ----
-    public const float LaserCooldown = 20f;
+    public static float LaserCooldown { get { return Cheats.SuperFrog ? Cheats.SuperLaserCooldown : 20f; } }
     public const float LaserRange = 18f;
     public float LaserReadyAt { get; private set; }
     public bool LaserReady { get { return Shop.HasLaser && Time.time >= LaserReadyAt; } }
@@ -47,6 +47,8 @@ public class GameDirector : MonoBehaviour
         LevelManager.LevelChanged += OnLevelChanged;
         Shop.Changed += ApplyLooks;
         Achievements.Unlocked += OnAchievement;
+        Shop.Changed += HelperBuddy.Refresh;          // a new buddy from the shop
+        GameSettings.Changed += HelperBuddy.Refresh;  // Pause > Extras > Helper buddy
     }
 
     void OnDestroy()
@@ -57,6 +59,8 @@ public class GameDirector : MonoBehaviour
         LevelManager.LevelChanged -= OnLevelChanged;
         Shop.Changed -= ApplyLooks;
         Achievements.Unlocked -= OnAchievement;
+        Shop.Changed -= HelperBuddy.Refresh;
+        GameSettings.Changed -= HelperBuddy.Refresh;
     }
 
     void Start()
@@ -69,6 +73,7 @@ public class GameDirector : MonoBehaviour
         voice.spatialBlend = 0f;
         AudioManager.Register(gameObject);
         ApplyLooks();
+        HelperBuddy.Refresh(); // the buddy waits beside the frog on the title screen too
     }
 
     // ---------------------------------------------------------------- round events
@@ -77,6 +82,10 @@ public class GameDirector : MonoBehaviour
     {
         roundTime = 0f;
         lastScore = ScoreCounter.score;
+        combo = 0;
+        DailyChallenge.ResetRound();
+        HelperBuddy.Refresh();
+        HelperBuddy.ResetRound();
         PlayRibbit(1f);
         if (PlayerPrefs.GetInt("FNL.tutorial", 0) == 0)
         {
@@ -137,7 +146,11 @@ public class GameDirector : MonoBehaviour
                 lastScore = score;
                 if (score >= 1) Achievements.Unlock("first");
                 if (score >= 25) Achievements.Unlock("fiend");
+                CountCombo();
             }
+            if (combo > 0 && Time.time - lastFlyTime > ComboWindow) combo = 0;
+            LevelManager levels = LevelManager.Instance;
+            DailyChallenge.Check(ScoreCounter.score, roundTime, levels != null ? levels.Level : 1, HelperBuddy.ChasesThisRound);
 
             UpdateMagnet();
             if (KeyBindings.LaserPressed()) FireLaser();
@@ -145,6 +158,30 @@ public class GameDirector : MonoBehaviour
         }
 
         if (beam != null && beam.enabled && Time.time > beamUntil) beam.enabled = false;
+    }
+
+    // ---------------------------------------------------------------- fly combos
+
+    // Eat flies quickly one after another for a combo: x3 = +1 bonus fly, x5 = +2, x8 and
+    // every few after that = +3. The bonus counts towards your score and your wallet.
+    public const float ComboWindow = 2.5f;
+    private int combo;
+    private float lastFlyTime = -10f;
+    public int Combo { get { return combo; } }
+
+    private void CountCombo()
+    {
+        combo = Time.time - lastFlyTime <= ComboWindow ? combo + 1 : 1;
+        lastFlyTime = Time.time;
+        DailyChallenge.BestComboThisRound = Mathf.Max(DailyChallenge.BestComboThisRound, combo);
+        int bonus = combo == 3 ? 1 : combo == 5 ? 2 : (combo >= 8 && (combo - 8) % 4 == 0) ? 3 : 0;
+        if (combo >= 8) Achievements.Unlock("combo");
+        if (bonus <= 0) return;
+        ScoreCounter.score += bonus;
+        lastScore += bonus;
+        Shop.Earn(bonus);
+        FrogEffects.Say("Combo x" + combo + "! +" + bonus);
+        AudioDirector.Play("PowerUp", 0.5f);
     }
 
     void LateUpdate()

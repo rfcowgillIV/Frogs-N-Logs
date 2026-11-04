@@ -23,6 +23,8 @@ public class SceneDressing : MonoBehaviour
     private static readonly Dictionary<string, string> TextureFor = new Dictionary<string, string>
     {
         { "Bark_NormalTree", "Bark_NormalTree" },
+        { "Bark_TwistedTree", "Bark_TwistedTree" },
+        { "Bark_DeadTree", "Bark_DeadTree" },
         { "Leaves_NormalTree", "Leaves_NormalTree_C" },
         { "Leaves_TwistedTree", "Leaves_TwistedTree_C" },
         { "Leaves_Pine", "Leaf_Pine_C" },
@@ -38,6 +40,11 @@ public class SceneDressing : MonoBehaviour
     private static readonly string[] EdgePlants = { "Bush_Common", "Bush_Common_Flowers", "Flower_3_Group", "Flower_4_Group", "Plant_1", "Rock_Medium_1", "Rock_Medium_2" };
     private static readonly string[] Meadow = { "Clover_1", "Flower_3_Group", "Flower_4_Group", "Mushroom_Common", "Plant_7", "Pebble_Round_1", "Grass_Common_Short" };
     private static readonly string[] Rocks = { "Rock_Medium_1", "Rock_Medium_2", "Rock_Medium_3" };
+    // Nov 2026: the pond grows each level (PlayArea.cs), and each new ring has its own look.
+    private static readonly string[] SwampTrees = { "TwistedTree_1", "TwistedTree_2", "TwistedTree_3" };
+    private static readonly string[] SwampPlants = { "Grass_Common_Tall", "Grass_Common_Tall", "Fern_1", "Mushroom_Common", "Bush_Common" };
+    private static readonly string[] NightTrees = { "DeadTree_1", "DeadTree_3" };
+    private static readonly string[] NightPlants = { "Fern_1", "Mushroom_Laetiporus", "Mushroom_Laetiporus", "Rock_Medium_3", "Grass_Common_Tall" };
 
     private readonly Dictionary<string, GameObject> models = new Dictionary<string, GameObject>();
     private System.Random random;
@@ -49,14 +56,19 @@ public class SceneDressing : MonoBehaviour
         var root = new GameObject("Scenery (Stylized Nature MegaKit)").transform;
         root.SetParent(transform, false);
 
-        // Trees outside the walls (the walls are at +-30).
-        for (int i = 0; i < 44; i++)
+        // A forest edge all the way round, just past the biggest (Night) walls at +-47.
+        float outer = PlayArea.StageHalfSize[PlayArea.StageHalfSize.Length - 1];
+        for (int i = 0; i < 76; i++)
         {
-            float angle = i / 44f * Mathf.PI * 2f + Range(-0.05f, 0.05f);
-            float radius = Range(33f, 44f);
-            Vector3 p = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
-            Place(root, Pick(Trees), p, Range(0.85f, 1.3f), i % 3 == 2);
+            Place(root, Pick(Trees), InBand(outer + 0.8f, outer + 2.8f), Range(0.85f, 1.3f), i % 3 == 2);
         }
+        // The Swamp ring (opens at level 2): twisted trees you hop around, reeds and ferns.
+        float pond = PlayArea.StageHalfSize[0], swamp = PlayArea.StageHalfSize[1];
+        for (int i = 0; i < 16; i++) Solid(Place(root, Pick(SwampTrees), InBand(pond + 2f, swamp - 2f), Range(0.8f, 1.1f), false));
+        for (int i = 0; i < 44; i++) Place(root, Pick(SwampPlants), InBand(pond + 0.5f, swamp - 0.5f), Range(0.6f, 1f), i % 2 == 1);
+        // The Night ring (opens at level 3): bare trees, ferns and big mushrooms.
+        for (int i = 0; i < 14; i++) Solid(Place(root, Pick(NightTrees), InBand(swamp + 2f, outer - 2f), Range(0.8f, 1.15f), false));
+        for (int i = 0; i < 40; i++) Place(root, Pick(NightPlants), InBand(swamp + 0.5f, outer - 0.5f), Range(0.6f, 1f), i % 2 == 1);
         // Bushes, flowers and rocks along the inside of the walls.
         for (int i = 0; i < 36; i++)
         {
@@ -92,6 +104,25 @@ public class SceneDressing : MonoBehaviour
     }
 
     private float Range(float a, float b) { return a + (float)random.NextDouble() * (b - a); }
+
+    // A random spot in the square ring between "inner" and "outer" metres from the middle.
+    private Vector3 InBand(float inner, float outer)
+    {
+        float depth = Range(inner, outer) * (random.Next(2) == 0 ? -1f : 1f);
+        float along = Range(-outer, outer);
+        return random.Next(2) == 0 ? new Vector3(depth, 0f, along) : new Vector3(along, 0f, depth);
+    }
+
+    // Give a tree a trunk you can't hop through (the bird's map walks around it too).
+    private static void Solid(GameObject tree)
+    {
+        if (tree == null) return;
+        var trunk = tree.AddComponent<CapsuleCollider>();
+        float s = Mathf.Max(tree.transform.lossyScale.x, 0.01f);
+        trunk.radius = 0.55f / s;
+        trunk.height = 4f / s;
+        trunk.center = new Vector3(0f, 2f / s, 0f);
+    }
     private string Pick(string[] list) { return list[random.Next(list.Length)]; }
 
     private GameObject Model(string name)

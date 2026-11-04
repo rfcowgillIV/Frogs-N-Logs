@@ -63,7 +63,8 @@ public class PowerUpSpawner : MonoBehaviour
         GameObject frog = GameObject.FindWithTag("Player");
         for (int attempt = 0; attempt < 20; attempt++)
         {
-            Vector3 p = new Vector3(UnityEngine.Random.Range(-Area, Area), 0f, UnityEngine.Random.Range(-Area, Area));
+            float area = Mathf.Max(Area, PlayArea.Inner(6f)); // the pond grows each level
+            Vector3 p = new Vector3(UnityEngine.Random.Range(-area, area), 0f, UnityEngine.Random.Range(-area, area));
             if (frog != null && Vector3.Distance(new Vector3(frog.transform.position.x, 0f, frog.transform.position.z), p) < MinDistanceFromFrog)
                 continue;
             p.y = GroundHeight(p) + 1f;

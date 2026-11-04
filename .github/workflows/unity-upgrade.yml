@@ -258,8 +258,15 @@ jobs:
                   print(f"::notice title={name} passed::{notes or 'ok'}")
               else:
                   failed += 1
-                  msg = (c.findtext("failure/message") or "").strip().replace("%", "%25").replace("\n", "%0A")
-                  print(f"::error title={name} {result}::{msg}%0A{notes}"[:60000])
+                  msg = (c.findtext("failure/message") or "").strip()
+                  stack = (c.findtext("failure/stack-trace") or "").strip()
+                  # Errors the game logged (e.g. an exception) come with their own stack trace
+                  # in the test's output; include it so the failing line is easy to find.
+                  logged = "\n".join(l for l in out.splitlines()
+                                      if "Exception" in l or " (at " in l or "Error" in l)[:4000]
+                  full = "\n".join(x for x in (msg, stack[:3000], logged) if x)
+                  full = full.replace("%", "%25").replace("\n", "%0A")
+                  print(f"::error title={name} {result}::{full}%0A{notes}"[:60000])
           raise SystemExit(1 if failed else 0)
           PY
 

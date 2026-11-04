@@ -141,6 +141,13 @@ namespace FrogsNLogs.Tests
 
         private static IEnumerator LoadLevel()
         {
+            // Nov 2026 round 4: the helper buddy and daily challenge would change what the older
+            // tests expect (the buddy chases the bird away!), so they start off; their own tests
+            // turn them on.
+            PlayerPrefs.SetInt("FNL.helperOn", 0);
+            PlayerPrefs.SetInt("FNL.cheats", 0);
+            PlayerPrefs.SetString("FNL.daily.done", DateTime.Now.ToString("yyyyMMdd"));
+            PlayerPrefs.Save();
 #if UNITY_EDITOR
             yield return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
                 ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -956,6 +963,168 @@ namespace FrogsNLogs.Tests
             yield return null;
             yield return null;
             Assert.AreEqual(landscapeFov, Camera.main.fieldOfView, 0.5f, "Back to the landscape view");
+        }
+
+        // ---------- Nov 2026 round 4: bigger pond, mini map, helper, cheats, combos ----------
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T20_ThePondGrowsEachLevel()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+
+            Type area = GameType("PlayArea");
+            Func<float> half = () => (float)area.GetProperty("HalfSize").GetValue(null);
+            Assert.AreEqual(30f, half(), 0.1f, "The Pond is the original 60 x 60 m");
+            Assert.IsTrue((bool)area.GetProperty("BuildingDone").GetValue(null), "The bird's walking map should be built");
+
+            object levels = GetStaticProp("LevelManager", "Instance");
+            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 2 });
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(39f, half(), 0.2f, "The Swamp opens up to 78 x 78 m");
+            UnityEngine.AI.NavMeshHit hit;
+            Assert.IsTrue(UnityEngine.AI.NavMesh.SamplePosition(new Vector3(35f, 2f, 0f), out hit, 3f, UnityEngine.AI.NavMesh.AllAreas),
+                "The bird should be able to walk into the new Swamp ring");
+            GameObject wall = GameObject.Find("Wall 3");
+            if (wall != null) Assert.AreEqual(39f, Mathf.Abs(wall.transform.position.x), 0.3f, "Walls should move out");
+            Assert.Greater((int)GameType("FlySpawner").GetProperty("FlyMinimum").GetValue(FindOne("FlySpawner")), 12, "A bigger pond gets more flies");
+
+            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 3 });
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(47f, half(), 0.2f, "Night opens up to 94 x 94 m");
+            yield return Screenshot("17-big-night-pond");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T21_MiniMapShowsWhatsAroundYou()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            yield return new WaitForSeconds(1f);
+            Component map = FindOne("MiniMap");
+            Assert.IsNotNull(map, "There should be a mini map");
+            int dots = (int)GameType("MiniMap").GetProperty("VisibleDots").GetValue(null);
+            int flies = (int)GameType("FlySpawner").GetField("totalFlies").GetValue(null);
+            Assert.GreaterOrEqual(dots, flies, "Every fly (plus you and the bird) should be a dot");
+            yield return Screenshot("18-mini-map");
+
+            // Flies off: fewer dots. Map off: none.
+            SetStaticProp("GameSettings", "MapFlies", false);
+            yield return null; yield return null;
+            Assert.Less((int)GameType("MiniMap").GetProperty("VisibleDots").GetValue(null), dots, "Hiding flies should hide their dots");
+            SetStaticProp("GameSettings", "MiniMap", false);
+            yield return null; yield return null;
+            Assert.AreEqual(0, (int)GameType("MiniMap").GetProperty("VisibleDots").GetValue(null), "The map can be turned off");
+            SetStaticProp("GameSettings", "MiniMap", true);
+            SetStaticProp("GameSettings", "MapFlies", true);
+        }
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T22_HelperBuddyChasesTheBirdAway()
+        {
+            PlayerPrefs.SetInt("FNL.helperOn", 1);
+            yield return LoadLevelKeepingHelper();
+            yield return StartGame();
+            yield return new WaitForSeconds(0.5f);
+            Component helper = FindOne("HelperBuddy");
+            Assert.IsNotNull(helper, "The helper buddy should come along");
+            Assert.IsNotNull(helper.GetComponentInChildren<Animation>(), "The buddy should be animated");
+
+            // Put the bird close to the frog: the buddy should dash at it and leave it dizzy.
+            GameObject frog = GameObject.FindWithTag("Player");
+            Component bird = FindOne("BirdMovement");
+            var agent = bird.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            // Start it outside the guard zone so it flies in, like in a real round.
+            agent.Warp(frog.transform.position + new Vector3(9f, 0f, 0f));
+            float until = Time.time + 8f;
+            while (Time.time < until && !(bool)GameType("BirdMovement").GetProperty("IsStunned").GetValue(null))
+                yield return null;
+            Assert.IsTrue((bool)GameType("BirdMovement").GetProperty("IsStunned").GetValue(null), "The buddy should chase the bird off");
+            Assert.AreEqual(1, (int)GameType("HelperBuddy").GetProperty("ChasesThisRound").GetValue(null));
+            Assert.IsTrue(frog.activeInHierarchy, "The frog should still be safe");
+            yield return Screenshot("19-helper-buddy");
+
+            // Turning it off sends the buddy home.
+            SetStaticProp("GameSettings", "HelperOn", false);
+            yield return null;
+            Assert.AreEqual(0, Object.FindObjectsByType(GameType("HelperBuddy"), FindObjectsSortMode.None).Length, "Helper off = no buddy");
+            PlayerPrefs.SetInt("FNL.helperOn", 0);
+        }
+
+        private static IEnumerator LoadLevelKeepingHelper()
+        {
+            PlayerPrefs.SetInt("FNL.cheats", 0);
+            PlayerPrefs.SetString("FNL.daily.done", DateTime.Now.ToString("yyyyMMdd"));
+#if UNITY_EDITOR
+            yield return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+                ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            yield return SceneManager.LoadSceneAsync("_Scenes");
+#endif
+            for (int i = 0; i < 10; i++) yield return null;
+        }
+
+        [UnityTest, Timeout(90000)]
+        public IEnumerator T23_CheatsUnlockEverythingAndSuperFrogCantBeCaught()
+        {
+            yield return LoadLevel();
+            Type cheats = GameType("Cheats");
+            Type shop = GameType("Shop");
+            int walletBefore = (int)shop.GetProperty("Wallet").GetValue(null);
+            cheats.GetProperty("Enabled").SetValue(null, true);
+            cheats.GetMethod("UnlockEverything").Invoke(null, null);
+            cheats.GetMethod("AddFlies").Invoke(null, new object[] { 1000 });
+            Assert.AreEqual(walletBefore + 1000, (int)shop.GetProperty("Wallet").GetValue(null), "+1000 flies");
+            Assert.IsTrue((bool)shop.GetMethod("Owns").Invoke(null, new object[] { "laser" }), "Unlock everything gives the laser");
+            Assert.IsTrue((bool)shop.GetMethod("Owns").Invoke(null, new object[] { "helper.wolf" }), "...and every helper");
+            cheats.GetMethod("UnlockAllAchievements").Invoke(null, null);
+            Type ach = GameType("Achievements");
+            Assert.AreEqual(((string[][])ach.GetField("All").GetValue(null)).Length, (int)ach.GetProperty("Count").GetValue(null), "All achievements");
+
+            cheats.GetProperty("SuperFrog").SetValue(null, true);
+            yield return StartGame();
+            yield return null;
+            Assert.GreaterOrEqual((float)GetStatic("PlayerMovement", "SpeedMultiplier"), 1.6f, "Super frog is faster");
+
+            // Let the bird reach the frog: it should bounce off.
+            GameObject frog = GameObject.FindWithTag("Player");
+            Component bird = FindOne("BirdMovement");
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().Warp(frog.transform.position + new Vector3(1.2f, 0f, 0f));
+            yield return new WaitForSeconds(3f);
+            Assert.IsTrue(frog.activeInHierarchy, "Super frog can't be caught");
+
+            object levels = GetStaticProp("LevelManager", "Instance");
+            Assert.IsTrue((bool)cheats.GetMethod("SkipLevel").Invoke(null, null), "Skip level");
+            Assert.AreEqual(2, (int)levels.GetType().GetProperty("Level").GetValue(levels));
+            Assert.IsTrue((bool)cheats.GetProperty("AffectsScore").GetValue(null), "Best scores pause while Super frog is on");
+
+            cheats.GetProperty("Enabled").SetValue(null, false);
+            Assert.IsFalse((bool)cheats.GetProperty("SuperFrog").GetValue(null), "Turning cheats off turns Super frog off");
+            // Put the shop back how the other tests expect it.
+            foreach (object item in (Array)shop.GetField("Items").GetValue(null))
+                PlayerPrefs.DeleteKey("FNL.shop." + item.GetType().GetField("id").GetValue(item));
+            PlayerPrefs.DeleteKey("FNL.wallet");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T24_QuickFliesMakeACombo()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            yield return null;
+            // Three flies in quick succession: x3 combo = 1 bonus fly.
+            int start = (int)GetStatic("ScoreCounter", "score");
+            for (int i = 1; i <= 3; i++)
+            {
+                SetStaticField("ScoreCounter", "score", (int)GetStatic("ScoreCounter", "score") + 1);
+                yield return null;
+                yield return new WaitForSeconds(0.3f);
+            }
+            Assert.AreEqual(start + 4, (int)GetStatic("ScoreCounter", "score"), "x3 combo should add a bonus fly");
+            Assert.IsNotNull(GameType("DailyChallenge").GetProperty("Goal").GetValue(null), "There's a daily challenge");
         }
     }
 }

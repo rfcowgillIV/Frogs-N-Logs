@@ -36,7 +36,8 @@ public class BirdMovement : MonoBehaviour {
 
 	// Speed for this frame: difficulty x any temporary effect.
 	private void ApplySpeed () {
-		float m = DifficultyRules.BirdSpeedMultiplier (GameSettings.Difficulty) * SpeedMultiplier;
+		float m = DifficultyRules.BirdSpeedMultiplier (GameSettings.Difficulty) * SpeedMultiplier
+		          * (Cheats.SlowBird ? 0.5f : 1f);
 		birdAgent.speed = baseSpeed * m;
 		birdAgent.acceleration = baseAcceleration * Mathf.Max (1f, m);
 		birdAgent.isStopped = m <= 0.01f || IsStunned;
