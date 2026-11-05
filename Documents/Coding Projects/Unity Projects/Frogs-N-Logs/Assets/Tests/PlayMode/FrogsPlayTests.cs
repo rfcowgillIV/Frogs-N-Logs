@@ -1278,11 +1278,12 @@ namespace FrogsNLogs.Tests
             Component kind = fly.GetComponentInParent(kindType);
             Assert.IsNotNull(kind, "Every fly should have a kind");
             kindType.GetMethod("Set").Invoke(kind, new[] { System.Enum.Parse(kinds, "Dragonfly") });
+            // (Check before eating: an eaten fly is reused straight away as a new fly.)
+            Assert.AreEqual(3, (int)kindType.GetProperty("Points").GetValue(kind), "A dragonfly is worth 3");
             int before = (int)GetStatic("ScoreCounter", "score");
             fly.SendMessage("OnTriggerEnter", frogCollider);
             yield return null;
             // (A real fly can drift into the frog at the same moment, so allow for one extra.)
-            Assert.AreEqual(3, (int)kindType.GetProperty("Points").GetValue(kind), "A dragonfly is worth 3");
             Assert.GreaterOrEqual((int)GetStatic("ScoreCounter", "score"), before + 3, "Eating a dragonfly adds 3");
 
             SetStaticField("ScoreCounter", "score", 5);
