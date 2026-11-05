@@ -12,18 +12,24 @@ using UnityEngine.SceneManagement;
 //   The Pond         "Carefree"
 //   The Swamp        "Sneaky Snitch"
 //   Night            "Investigations"
+//   Lily Pad Lake    "Easy Lemon"
+//   Autumn Woods     "Thatched Villagers"
+//   Winter Freeze    "Frost Waltz"
+//   The Great Owl    "Volatile Reaction"
 // The tracks live in StreamingAssets/Music and STREAM in after the game has loaded, so they
 // don't add anything to the first download. They follow the Music volume slider.
 //
 // SOUND EFFECTS (all CC0, see CREDITS.md): ribbits and croaks (EZduzziteh), fly gulp (Bobjt),
 // menu clicks (Kenney), jingles (Kenney, Fupi), power-up (congusbongus), zap and pop
-// (rubberduck), night crickets (Aj_). They follow the Sound effects slider.
+// (rubberduck), night crickets (Aj_); tongue, dodge, splash, ice crack, bounce, sting and
+// rustle (rubberduck). They follow the Sound effects slider.
 public class AudioDirector : MonoBehaviour
 {
     public static AudioDirector Instance { get; private set; }
 
     public const string TitleTrack = "FluffingaDuck";
-    public static readonly string[] LevelTracks = { "Carefree", "SneakySnitch", "Investigations" };
+    public static readonly string[] LevelTracks = { "Carefree", "SneakySnitch", "Investigations", "EasyLemon", "ThatchedVillagers", "FrostWaltz" };
+    public const string BossTrack = "VolatileReaction";
 
     private AudioSource musicA;
     private AudioSource musicB;
@@ -128,7 +134,8 @@ public class AudioDirector : MonoBehaviour
     {
         PlayMusic(LevelTracks[Mathf.Clamp(level - 1, 0, LevelTracks.Length - 1)]);
         Play("LevelUp", 0.8f);
-        if (level >= 3) PlayAmbience("Crickets", 0.35f);
+        if (level == 3) PlayAmbience("Crickets", 0.35f);
+        else ambience.Stop();
     }
 
     // ------------------------------------------------------------ music

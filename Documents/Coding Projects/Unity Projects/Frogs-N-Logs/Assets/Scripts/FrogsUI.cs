@@ -44,6 +44,8 @@ public class FrogsUI : MonoBehaviour
     private Text statusText;
     private Text toastText;
     private Button zapButton;
+    private Button dodgeButton, tongueButton;
+    private Text dodgeLabel;
     private Text zapLabel;
     private float toastUntil;
     private Text titleBestText;
@@ -94,6 +96,10 @@ public class FrogsUI : MonoBehaviour
         // The round's helpers live alongside the menus, so they all reset together.
         go.AddComponent<Stylizer>();      // the cartoon look + new models (first, so the rest sees them)
         go.AddComponent<PlayArea>();      // the pond grows each level
+        go.AddComponent<Biome>();         // lake, autumn and winter worlds (levels 4-6)
+        go.AddComponent<Weather>();       // the odd rainstorm
+        go.AddComponent<BossOwl>();       // the Great Owl finale
+        go.AddComponent<FrogTongue>();    // tongue flick
         go.AddComponent<GameDirector>();
         go.AddComponent<LevelManager>();
         go.AddComponent<HazardSpawner>();
@@ -105,6 +111,7 @@ public class FrogsUI : MonoBehaviour
     {
         Instance = this;
         GameSettings.Changed += RefreshAll;
+        ResponsiveCanvas.OrientationChanged += RefreshAll;
         Shop.Changed += RefreshAll;
         GameState.RoundStarted += OnRoundStarted;
         GameState.RoundEnded += OnRoundEnded;
@@ -116,6 +123,7 @@ public class FrogsUI : MonoBehaviour
     void OnDestroy()
     {
         GameSettings.Changed -= RefreshAll;
+        ResponsiveCanvas.OrientationChanged -= RefreshAll;
         Shop.Changed -= RefreshAll;
         GameState.RoundStarted -= OnRoundStarted;
         GameState.RoundEnded -= OnRoundEnded;
@@ -296,9 +304,12 @@ public class FrogsUI : MonoBehaviour
         // How to play: both control styles, side by side.
         RectTransform how = Row("How to play", card, 16f);
         ControlsBox(how, "KEYBOARD",
-            "Move:  W A S D  or  arrow keys\nStart:  Space or Enter\nPause:  Esc or P");
+            "Move:  W A S D  or  arrow keys\nTongue:  E     Dodge hop:  Shift\nStart:  Space     Pause:  Esc or P");
         ControlsBox(how, "TOUCH & MOUSE",
-            "Move:  hold your finger (or mouse)\n           where you want to hop\nStart:  tap Play     Pause:  II button");
+            "Move:  hold where you want to hop\nTONGUE and DODGE buttons\nStart:  tap Play     Pause:  II");
+        // Phones held upright: stack the two boxes so everything can be bigger.
+        refreshers.Add(() => SetRowVertical(how, ScreenLayout.IsPortrait));
+        portraitRows.Add(how);
 
         // Difficulty
         Label(card, "DIFFICULTY", 18, Muted, FontStyle.Bold, TextAnchor.MiddleCenter);
@@ -310,6 +321,50 @@ public class FrogsUI : MonoBehaviour
             Image img = b.GetComponent<Image>();
             refreshers.Add(() => SetSelected(img, GameSettings.Difficulty == captured));
         }
+        // Level select: start at any level you've reached, with your best stars for each.
+        Label(card, "START AT LEVEL", 18, Muted, FontStyle.Bold, TextAnchor.MiddleCenter);
+        var levelsGo = new GameObject("Level Select", typeof(RectTransform));
+        levelsGo.transform.SetParent(card, false);
+        var grid = levelsGo.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(118f, 66f);
+        grid.spacing = new Vector2(6f, 6f);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 6;
+        grid.childAlignment = TextAnchor.MiddleCenter;
+        var gridLayout = levelsGo.AddComponent<LayoutElement>();
+        gridLayout.preferredWidth = 6 * 118f + 5 * 6f;
+        refreshers.Add(() =>
+        {
+            int cols = ScreenLayout.IsPortrait ? 3 : 6;
+            grid.constraintCount = cols;
+            int rows = Mathf.CeilToInt(LevelProgress.LevelCount / (float)cols);
+            gridLayout.preferredWidth = cols * 118f + (cols - 1) * 6f;
+            gridLayout.preferredHeight = rows * 66f + (rows - 1) * 6f;
+        });
+        string[] shortNames = { "Pond", "Swamp", "Night", "Lake", "Autumn", "Winter" };
+        for (int i = 1; i <= LevelProgress.LevelCount; i++)
+        {
+            int level = i;
+            Button b = MakeButton(levelsGo.transform, "", 16, () =>
+            {
+                if (LevelProgress.IsUnlocked(level)) LevelProgress.StartLevel = level;
+            }, 0f, 0f);
+            Text t = b.GetComponentInChildren<Text>();
+            t.rectTransform.offsetMin = new Vector2(0f, 18f);
+            Image img = b.GetComponent<Image>();
+            Image[] stars = StarRow(b.transform);
+            refreshers.Add(() =>
+            {
+                bool open = LevelProgress.IsUnlocked(level);
+                b.interactable = open;
+                t.text = open ? level + "  " + shortNames[level - 1] : level + "  (locked)";
+                t.color = open ? Soft : Muted;
+                SetSelected(img, LevelProgress.StartLevel == level);
+                int got = LevelProgress.Stars(level);
+                for (int s = 0; s < 3; s++) stars[s].color = s < got ? Gold : new Color(1f, 1f, 1f, open ? 0.18f : 0.06f);
+            });
+        }
+
         Text daily = Label(card, "", 19, Soft, FontStyle.Normal, TextAnchor.MiddleCenter);
         refreshers.Add(() => daily.text = "<color=#8BC34A><b>TODAY'S CHALLENGE</b></color>  " + DailyChallenge.Goal
             + (DailyChallenge.Done ? "   <color=#FFD152>Done!</color>" : "   <color=#9EB394>(+" + DailyChallenge.Reward + " flies)</color>"));
@@ -332,6 +387,86 @@ public class FrogsUI : MonoBehaviour
         play.GetComponentInChildren<Text>().color = Ink;
         MakeButton(buttons, "Settings", 24, () => OpenMenu(false), 180f, 76f);
         MakeButton(buttons, "Credits", 24, () => ShowCredits(false), 160f, 76f);
+    }
+
+    private readonly List<RectTransform> portraitRows = new List<RectTransform>();
+
+    // Switch a row of boxes between side by side (landscape) and stacked (portrait).
+    private static void SetRowVertical(RectTransform row, bool vertical)
+    {
+        bool isVertical = row.GetComponent<VerticalLayoutGroup>() != null;
+        if (isVertical == vertical) return;
+        HorizontalOrVerticalLayoutGroup old = row.GetComponent<HorizontalOrVerticalLayoutGroup>();
+        float spacing = old != null ? old.spacing : 12f;
+        if (old != null) DestroyImmediate(old);
+        HorizontalOrVerticalLayoutGroup g = vertical
+            ? (HorizontalOrVerticalLayoutGroup)row.gameObject.AddComponent<VerticalLayoutGroup>()
+            : row.gameObject.AddComponent<HorizontalLayoutGroup>();
+        g.spacing = spacing;
+        g.childAlignment = TextAnchor.MiddleCenter;
+        g.childControlWidth = true;
+        g.childControlHeight = true;
+        g.childForceExpandWidth = false;
+        g.childForceExpandHeight = false;
+        LayoutRebuilder.MarkLayoutForRebuild(row);
+    }
+
+    // Three little stars along the bottom of a button (level select).
+    private Image[] StarRow(Transform button)
+    {
+        var row = new GameObject("Stars", typeof(RectTransform));
+        row.transform.SetParent(button, false);
+        var rt = row.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 0f);
+        rt.anchorMax = new Vector2(1f, 0f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.anchoredPosition = new Vector2(0f, 5f);
+        rt.sizeDelta = new Vector2(0f, 18f);
+        var h = row.AddComponent<HorizontalLayoutGroup>();
+        h.spacing = 3f;
+        h.childAlignment = TextAnchor.MiddleCenter;
+        h.childControlWidth = false;
+        h.childControlHeight = false;
+        h.childForceExpandWidth = false;
+        var stars = new Image[3];
+        for (int i = 0; i < 3; i++)
+        {
+            var s = new GameObject("Star", typeof(RectTransform));
+            s.transform.SetParent(row.transform, false);
+            s.GetComponent<RectTransform>().sizeDelta = new Vector2(17f, 17f);
+            stars[i] = s.AddComponent<Image>();
+            stars[i].sprite = StarSprite();
+            stars[i].raycastTarget = false;
+        }
+        return stars;
+    }
+
+    private static Sprite starSprite;
+
+    private static Sprite StarSprite()
+    {
+        if (starSprite != null) return starSprite;
+        const int n = 48;
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++)
+        {
+            for (int x = 0; x < n; x++)
+            {
+                // A five-pointed star: radius wobbles between inner and outer by angle.
+                float fx = (x + 0.5f) / n * 2f - 1f, fy = (y + 0.5f) / n * 2f - 1f;
+                float ang = Mathf.Atan2(fx, fy);
+                float r = Mathf.Sqrt(fx * fx + fy * fy);
+                float k = Mathf.Abs(Mathf.Repeat(ang / (Mathf.PI * 2f / 5f), 1f) - 0.5f) * 2f; // 0 at points, 1 between
+                float edge = Mathf.Lerp(0.95f, 0.42f, k);
+                float a = Mathf.Clamp01((edge - r) * 14f);
+                px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+            }
+        }
+        tex.SetPixels32(px);
+        tex.Apply();
+        starSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+        return starSprite;
     }
 
     private void ControlsBox(RectTransform parent, string heading, string body)
@@ -376,9 +511,31 @@ public class FrogsUI : MonoBehaviour
         var zrt = zapButton.GetComponent<RectTransform>();
         zrt.anchorMin = zrt.anchorMax = new Vector2(1f, 0f);
         zrt.pivot = new Vector2(1f, 0f);
-        zrt.anchoredPosition = new Vector2(-24f, 24f);
+        zrt.anchoredPosition = new Vector2(-24f, 150f);
         zapButton.GetComponent<Image>().color = new Color(0.75f, 0.12f, 0.18f, 0.75f);
         zapLabel = zapButton.GetComponentInChildren<Text>();
+
+        // Nov 2026: dodge hop and tongue flick buttons (keyboard: Shift and E).
+        dodgeButton = MakeButton(hud.GetComponent<RectTransform>(), "DODGE", 22, () =>
+        {
+            if (PlayerMovement.Instance != null) PlayerMovement.Instance.Dodge();
+        }, 110f, 110f);
+        var drt = dodgeButton.GetComponent<RectTransform>();
+        drt.anchorMin = drt.anchorMax = new Vector2(1f, 0f);
+        drt.pivot = new Vector2(1f, 0f);
+        drt.anchoredPosition = new Vector2(-24f, 24f);
+        dodgeButton.GetComponent<Image>().color = new Color(0.25f, 0.55f, 0.9f, 0.7f);
+        dodgeLabel = dodgeButton.GetComponentInChildren<Text>();
+
+        tongueButton = MakeButton(hud.GetComponent<RectTransform>(), "TONGUE", 20, () =>
+        {
+            if (FrogTongue.Instance != null) FrogTongue.Instance.Flick();
+        }, 110f, 110f);
+        var trt = tongueButton.GetComponent<RectTransform>();
+        trt.anchorMin = trt.anchorMax = new Vector2(1f, 0f);
+        trt.pivot = new Vector2(1f, 0f);
+        trt.anchoredPosition = new Vector2(-150f, 24f);
+        tongueButton.GetComponent<Image>().color = new Color(0.95f, 0.4f, 0.55f, 0.7f);
 
         fpsText = Label(hud.GetComponent<RectTransform>(), "", 20, Soft, FontStyle.Bold, TextAnchor.LowerLeft);
         var frt = fpsText.rectTransform;
@@ -457,19 +614,31 @@ public class FrogsUI : MonoBehaviour
         if (levels != null)
         {
             int goal = levels.NextGoal;
-            string next = levels.IsFinalLevel ? "survive the night" : "reach " + LevelManager.Names[levels.Level];
-            levelText.text = "Level " + levels.Level + " · " + levels.LevelName
-                             + (goal > 0 ? "     " + ScoreCounter.score + " / " + goal + " flies to " + next
-                                         : "     Bonus round: how long can you last?");
+            string next = levels.IsFinalLevel ? "face the Great Owl" : "reach " + LevelManager.Names[levels.Level];
+            string goalText;
+            if (levels.BossActive && BossOwl.Active != null) goalText = "     Survive the Great Owl: " + Mathf.CeilToInt(BossOwl.Active.SecondsLeft) + "s";
+            else if (goal > 0) goalText = "     " + ScoreCounter.score + " / " + goal + " flies to " + next;
+            else goalText = "     Bonus round: how long can you last?";
+            levelText.text = "Level " + levels.Level + " · " + levels.LevelName + goalText;
         }
 
         string status = "";
         if (FrogEffects.Boosted) status += "Speed boost " + Mathf.CeilToInt(FrogEffects.BoostSecondsLeft) + "s   ";
         if (FrogEffects.ShieldActive) status += "Lily-pad shield up   ";
-        if (BirdMovement.IsStunned) status += "Bird is dizzy!   ";
+        if (BirdMovement.IsStunned && BossOwl.Active == null) status += "Bird is dizzy!   ";
+        if (HidingSpot.FrogHidden) status += "Hidden in the reeds " + Mathf.CeilToInt(HidingSpot.HiddenSecondsLeft) + "s   ";
+        if (PlayerMovement.Stuck) status += "Stuck in the ice!   ";
+        if (FlyKind.StungUntil > Time.time) status += "Stung!   ";
+        if (Weather.Raining) status += "Rainstorm   ";
         if (GameDirector.Instance != null && GameDirector.Instance.Combo >= 2) status += "Combo x" + GameDirector.Instance.Combo + "   ";
         if (Cheats.Enabled) status += "<color=#FF9EE5>Cheats on</color>   ";
         statusText.text = status.TrimEnd();
+
+        if (dodgeLabel != null)
+        {
+            float wait = PlayerMovement.DodgeReadyAt - Time.time;
+            dodgeLabel.text = wait > 0f ? wait.ToString("0.0") : "DODGE";
+        }
 
         if (zapButton != null)
         {
@@ -553,7 +722,7 @@ public class FrogsUI : MonoBehaviour
     public void ShowCredits(bool fromEnding)
     {
         creditsFromEnding = fromEnding;
-        creditsHeading.text = fromEnding ? "You survived the night!" : "Credits";
+        creditsHeading.text = fromEnding ? "You beat the Great Owl!" : "Credits";
         creditsEndButtons.transform.GetChild(0).gameObject.SetActive(fromEnding);
         creditsEndButtons.transform.GetChild(1).GetComponentInChildren<Text>().text = fromEnding ? "Back to title" : "Back";
         creditsScroll.anchoredPosition = new Vector2(0f, -560f);

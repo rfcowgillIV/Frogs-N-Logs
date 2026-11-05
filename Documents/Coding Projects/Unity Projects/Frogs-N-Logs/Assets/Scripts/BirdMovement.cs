@@ -48,12 +48,22 @@ public class BirdMovement : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
+	private Vector3 lastSeen;
+	private float nextSearch;
+
 	void Update () {
 
 		ApplySpeed ();
 
 		//Set the birds destination
-		birdAgent.SetDestination(target.position);
+		// Nov 2026: if the frog is hiding in the reeds, search around where it was last seen.
+		if (!HidingSpot.FrogHidden) {
+			lastSeen = target.position;
+			birdAgent.SetDestination (target.position);
+		} else if (Time.time > nextSearch) {
+			nextSearch = Time.time + 1.5f;
+			birdAgent.SetDestination (lastSeen + new Vector3 (Random.Range (-7f, 7f), 0f, Random.Range (-7f, 7f)));
+		}
 
 		//Measure the magnitude of the NavMeshAgent's Velocity
 		float speed = birdAgent.velocity.magnitude;

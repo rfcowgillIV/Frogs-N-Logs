@@ -888,7 +888,7 @@ namespace FrogsNLogs.Tests
         }
 
         [UnityTest, Timeout(90000)]
-        public IEnumerator T17_SurvivingTheNightRollsTheCredits()
+        public IEnumerator T17_BeatingTheGreatOwlRollsTheCredits()
         {
             yield return LoadLevel();
             yield return StartGame();
@@ -896,14 +896,28 @@ namespace FrogsNLogs.Tests
             bird.enabled = false;
             bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
 
+            // Nov 2026 round 5: six levels; the last one ends with the Great Owl.
             object levels = GetStaticProp("LevelManager", "Instance");
-            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 3 });
+            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 6 });
             yield return null;
+            int start = (int)levels.GetType().GetProperty("LevelStartScore").GetValue(levels);
             int goal = (int)GameType("LevelManager").GetMethod("FinalGoal").Invoke(null, new[] { GetStaticProp("GameSettings", "Difficulty") });
-            SetStaticField("ScoreCounter", "score", goal);
-            yield return new WaitForSecondsRealtime(1.5f);
+            SetStaticField("ScoreCounter", "score", start + goal);
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsTrue((bool)levels.GetType().GetProperty("BossActive").GetValue(levels), "The Great Owl should arrive");
+            object boss = GetStaticProp("BossOwl", "Active");
+            Assert.IsNotNull(boss, "The Great Owl should be hunting");
+            Assert.IsNotNull(GameObject.Find("The Great Owl"), "...and be in the sky");
+            // Keep the frog safe while we watch the first dive.
+            SetStaticField("FrogEffects", "InvulnerableUntil", Time.time + 30f);
+            float until = Time.time + 5f;
+            while (Time.time < until && GameObject.Find("Owl Dive") == null) yield return null;
+            Assert.IsNotNull(GameObject.Find("Owl Dive"), "The owl should dive (a red ring warns you)");
+            yield return Screenshot("20-great-owl");
 
-            Assert.IsTrue((bool)levels.GetType().GetProperty("HasFinished").GetValue(levels), "Reaching the final goal should finish the night");
+            boss.GetType().GetMethod("Survive").Invoke(boss, null);
+            yield return new WaitForSecondsRealtime(1.5f);
+            Assert.IsTrue((bool)levels.GetType().GetProperty("HasFinished").GetValue(levels), "Surviving the owl should finish the game");
             Component ui = FindOne("FrogsUI");
             Assert.IsTrue((bool)ui.GetType().GetProperty("CreditsShowing").GetValue(ui), "Credits should roll");
             string text = AllVisibleText();
@@ -1136,6 +1150,173 @@ namespace FrogsNLogs.Tests
             }
             Assert.AreEqual(start + 4, (int)GetStatic("ScoreCounter", "score"), "x3 combo should add a bonus fly");
             Assert.IsNotNull(GameType("DailyChallenge").GetProperty("Goal").GetValue(null), "There's a daily challenge");
+        }
+
+        // ---------- Nov 2026 round 5: three new levels, tongue, dodge, stars, bees, hiding, rain ----------
+
+        private static void KeepFrogSafe(float seconds)
+        {
+            SetStaticField("FrogEffects", "InvulnerableUntil", Time.time + seconds);
+            Behaviour bird = (Behaviour)FindOne("BirdMovement");
+            bird.enabled = false;
+            bird.GetComponent<UnityEngine.AI.NavMeshAgent>().isStopped = true;
+        }
+
+        [UnityTest, Timeout(120000)]
+        public IEnumerator T25_NewLevelsTransformThePond()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            KeepFrogSafe(120f);
+            object levels = GetStaticProp("LevelManager", "Instance");
+            MethodInfo go = levels.GetType().GetMethod("GoToLevel");
+            Type biome = GameType("Biome");
+            Terrain terrain = Terrain.activeTerrain;
+
+            go.Invoke(levels, new object[] { 4 });
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(4, (int)biome.GetProperty("Current").GetValue(null), "Lily Pad Lake's world should be in");
+            Assert.Greater(Object.FindObjectsByType(GameType("LilyPad"), FindObjectsSortMode.None).Length, 5, "There should be lily pads");
+            if (terrain != null) StringAssert.Contains("Ground", terrain.materialTemplate.name, "The lake has its own high-res ground");
+            yield return Screenshot("21-lily-pad-lake");
+
+            go.Invoke(levels, new object[] { 5 });
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(5, (int)biome.GetProperty("Current").GetValue(null), "Autumn Woods' world should be in");
+            Assert.Greater(Object.FindObjectsByType(GameType("LeafPile"), FindObjectsSortMode.None).Length, 5, "There should be leaf piles");
+            Assert.Greater(Object.FindObjectsByType(GameType("BouncePad"), FindObjectsSortMode.None).Length, 2, "There should be giant mushrooms");
+            Assert.Less(Object.FindObjectsByType(GameType("LilyPad"), FindObjectsSortMode.None).Length, 1, "The lily pads should be gone");
+            float until = Time.time + 3f;
+            while (Time.time < until && GetStaticProp("GroundHunter", "Active") == null) yield return null;
+            Assert.IsNotNull(GetStaticProp("GroundHunter", "Active"), "A fox should be hunting in the woods");
+            yield return Screenshot("22-autumn-woods");
+
+            go.Invoke(levels, new object[] { 6 });
+            yield return new WaitForSeconds(3f);
+            Assert.AreEqual(6, (int)biome.GetProperty("Current").GetValue(null), "The Winter Freeze should be in");
+            Assert.Greater(Object.FindObjectsByType(GameType("ThinIce"), FindObjectsSortMode.None).Length, 3, "There should be thin ice");
+            Assert.IsNotNull(GameObject.Find("Snowfall"), "It should be snowing");
+            Assert.IsNull(GetStaticProp("GroundHunter", "Active"), "The fox stays in the woods");
+            yield return Screenshot("23-winter-freeze");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T26_TongueFlickCatchesAFlyFromAfar()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            KeepFrogSafe(60f);
+            yield return null;
+            GameObject frog = GameObject.FindWithTag("Player");
+            // Move one fly 3 m away (out of reach of the frog's body, inside the tongue's reach).
+            var flies = (System.Collections.IList)GameType("FlySpawner").GetField("ActiveFlies").GetValue(null);
+            Assert.Greater(flies.Count, 0, "There should be flies");
+            var fly = (GameObject)flies[0];
+            fly.transform.position = frog.transform.position + new Vector3(3f, 1.2f, 0f);
+            yield return null;
+            int before = (int)GetStatic("ScoreCounter", "score");
+            object tongue = GetStaticProp("FrogTongue", "Instance");
+            Assert.IsNotNull(tongue, "The frog should have a tongue");
+            Assert.IsTrue((bool)tongue.GetType().GetMethod("Flick").Invoke(tongue, null), "A fly 3 m away should be in reach");
+            yield return new WaitForSeconds(0.3f);
+            Assert.Greater((int)GetStatic("ScoreCounter", "score"), before, "The tongue should catch the fly");
+            Assert.IsNotNull(GameObject.Find("Frog Tongue"), "...and you should see the tongue");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T27_DodgeHopLeapsOutOfTheWay()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            KeepFrogSafe(0f);
+            SetStaticField("FrogEffects", "InvulnerableUntil", 0f);
+            yield return new WaitForSeconds(0.5f);
+            GameObject frog = GameObject.FindWithTag("Player");
+            Vector3 start = frog.transform.position;
+            Component move = FindOne("PlayerMovement");
+            Assert.IsTrue((bool)move.GetType().GetMethod("Dodge").Invoke(move, null), "Dodge hop should work");
+            Assert.Greater((float)GetStatic("FrogEffects", "InvulnerableUntil"), Time.time, "You can't be caught mid-leap");
+            yield return new WaitForSeconds(0.35f);
+            float moved = Vector3.Distance(Flat(frog.transform.position), Flat(start));
+            Assert.Greater(moved, 2.5f, "A dodge hop should leap a few metres (moved " + moved.ToString("0.0") + ")");
+            Assert.IsFalse((bool)move.GetType().GetMethod("Dodge").Invoke(move, null), "...and then need to recharge");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T28_LevelSelectStartsAtAReachedLevelAndStarsAreSaved()
+        {
+            PlayerPrefs.SetInt("FNL.reached.Medium", 4);
+            PlayerPrefs.SetInt("FNL.start.Medium", 4);
+            yield return LoadLevel();
+            PlayerPrefs.SetInt("FNL.reached.Medium", 4);
+            PlayerPrefs.SetInt("FNL.start.Medium", 4);
+            StringAssert.Contains("Lake", AllVisibleText(), "The title screen should offer the levels you've reached");
+            yield return StartGame();
+            KeepFrogSafe(30f);
+            yield return new WaitForSeconds(0.5f);
+            object levels = GetStaticProp("LevelManager", "Instance");
+            Assert.AreEqual(4, (int)levels.GetType().GetProperty("Level").GetValue(levels), "The run should start at Lily Pad Lake");
+
+            Type progress = GameType("LevelProgress");
+            int stars = (int)progress.GetMethod("Complete").Invoke(null, new object[] { 2, 10f, 10 });
+            Assert.AreEqual(2, stars, "A quick finish (under par) earns 2 stars");
+            Assert.AreEqual(2, (int)progress.GetMethod("Stars").Invoke(null, new object[] { 2 }), "Stars are saved");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T29_DragonfliesAreWorthMoreAndBeesSting()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            KeepFrogSafe(60f);
+            yield return null;
+            Collider frogCollider = GameObject.FindWithTag("Player").GetComponentInChildren<Collider>();
+            Type kindType = GameType("FlyKind");
+            Type kinds = kindType.GetNestedType("Type");
+
+            Component fly = FindOne("FlyPickUp");
+            Component kind = fly.GetComponentInParent(kindType);
+            Assert.IsNotNull(kind, "Every fly should have a kind");
+            kindType.GetMethod("Set").Invoke(kind, new[] { System.Enum.Parse(kinds, "Dragonfly") });
+            int before = (int)GetStatic("ScoreCounter", "score");
+            fly.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.AreEqual(before + 3, (int)GetStatic("ScoreCounter", "score"), "A dragonfly is worth 3");
+
+            SetStaticField("ScoreCounter", "score", 5);
+            yield return null;
+            Component bee = FindOne("FlyPickUp");
+            kindType.GetMethod("Set").Invoke(bee.GetComponentInParent(kindType), new[] { System.Enum.Parse(kinds, "Bee") });
+            bee.SendMessage("OnTriggerEnter", frogCollider);
+            yield return null;
+            Assert.AreEqual(3, (int)GetStatic("ScoreCounter", "score"), "A bee sting costs 2 flies");
+            Assert.Greater((float)GetStatic("FlyKind", "StungUntil"), Time.time, "...and slows you down");
+        }
+
+        [UnityTest, Timeout(60000)]
+        public IEnumerator T30_HidingInTheReedsAndRainstorms()
+        {
+            yield return LoadLevel();
+            yield return StartGame();
+            KeepFrogSafe(60f);
+            yield return null;
+            Component spot = FindOne("HidingSpot");
+            Assert.IsNotNull(spot, "There should be reeds to hide in");
+            GameObject frog = GameObject.FindWithTag("Player");
+            Vector3 p = spot.transform.position;
+            frog.GetComponent<Rigidbody>().position = new Vector3(p.x, frog.transform.position.y, p.z);
+            frog.transform.position = new Vector3(p.x, frog.transform.position.y, p.z);
+            float until = Time.time + 2f;
+            while (Time.time < until && !(bool)GetStaticProp("HidingSpot", "FrogHidden")) yield return null;
+            Assert.IsTrue((bool)GetStaticProp("HidingSpot", "FrogHidden"), "Keeping still in the reeds should hide you");
+
+            int flies = (int)GameType("FlySpawner").GetProperty("FlyMinimum").GetValue(FindOne("FlySpawner"));
+            object weather = GetStaticProp("Weather", "Instance");
+            weather.GetType().GetMethod("StartStorm").Invoke(weather, new object[] { 5f });
+            yield return null;
+            Assert.IsTrue((bool)GetStaticProp("Weather", "Raining"), "A storm should start");
+            Assert.Greater((int)GameType("FlySpawner").GetProperty("FlyMinimum").GetValue(FindOne("FlySpawner")), flies, "Rain brings more flies");
+            Assert.Greater((float)GetStaticProp("Weather", "BirdFactor"), 1f, "...and a restless bird");
         }
     }
 }

@@ -66,7 +66,8 @@ public class HelperBuddy : MonoBehaviour
         frog = frogTransform;
         HelperName = NameFor(id);
         string model = id == "helper.cat" ? "Cat" : id == "helper.wolf" ? "Wolf" : "Dog";
-        float length = id == "helper.cat" ? 1.0f : id == "helper.wolf" ? 1.6f : 1.3f;
+        // Nov 2026: a bit bigger, so they read clearly next to the frog.
+        float length = id == "helper.cat" ? 1.4f : id == "helper.wolf" ? 2.2f : 1.8f;
         dashSpeed = id == "helper.cat" ? 13f : 11f;
         stunSeconds = id == "helper.wolf" ? 4.5f : 3f;
 
@@ -98,21 +99,7 @@ public class HelperBuddy : MonoBehaviour
             if (r is SkinnedMeshRenderer) ((SkinnedMeshRenderer)r).updateWhenOffscreen = true;
         }
 
-        // Face forward: the model's front legs should point along +Z.
-        Vector3 front, back;
-        if (Average(instance.transform, "IKFront", out front) && Average(instance.transform, "IKBack", out back))
-        {
-            Vector3 d = front - back;
-            d.y = 0f;
-            if (d.sqrMagnitude > 0.0001f) visual.localRotation = Quaternion.FromToRotation(d.normalized, Vector3.forward) * visual.localRotation;
-        }
-
-        // Size it.
-        Bounds b = BoundsOf(instance);
-        float have = Mathf.Max(b.size.x, b.size.z);
-        if (have > 0.0001f) visual.localScale *= length / have;
-        b = BoundsOf(instance);
-        visual.position += new Vector3(transform.position.x - b.center.x, transform.position.y - b.min.y, transform.position.z - b.center.z);
+        FitModel(instance, transform, length);
 
         anim = instance.GetComponentInChildren<Animation>();
         if (anim != null)
@@ -128,6 +115,25 @@ public class HelperBuddy : MonoBehaviour
         }
         Play(idleClip, 1f);
         Debug.Log("[Helper] " + HelperName + " is here to help");
+    }
+
+    // Turn an animal model to face +Z (front legs ahead of back legs), scale it to the given
+    // length and stand it on its host's position. Also used for the fox (GroundHunter.cs).
+    public static void FitModel(GameObject instance, Transform host, float length)
+    {
+        Transform visual = instance.transform;
+        Vector3 front, back;
+        if (Average(visual, "IKFront", out front) && Average(visual, "IKBack", out back))
+        {
+            Vector3 d = front - back;
+            d.y = 0f;
+            if (d.sqrMagnitude > 0.0001f) visual.localRotation = Quaternion.FromToRotation(d.normalized, Vector3.forward) * visual.localRotation;
+        }
+        Bounds b = BoundsOf(instance);
+        float have = Mathf.Max(b.size.x, b.size.z);
+        if (have > 0.0001f) visual.localScale *= length / have;
+        b = BoundsOf(instance);
+        visual.position += new Vector3(host.position.x - b.center.x, host.position.y - b.min.y, host.position.z - b.center.z);
     }
 
     // Average position of the bones whose names start with prefix (e.g. the front feet).
@@ -245,6 +251,12 @@ public class HelperBuddy : MonoBehaviour
             float d = Flat(snake.transform.position - frog.position).magnitude;
             if (d < bestD) { bestD = d; best = snake.transform; }
         }
+        GroundHunter fox = GroundHunter.Active;
+        if (fox != null && !fox.Stunned)
+        {
+            float d = Flat(fox.transform.position - frog.position).magnitude;
+            if (d < bestD) { bestD = d; best = fox.transform; }
+        }
         return best;
     }
 
@@ -262,6 +274,13 @@ public class HelperBuddy : MonoBehaviour
         }
         SnakeHazard snake = predator.GetComponent<SnakeHazard>();
         if (snake != null) snake.Stun(stunSeconds);
+        GroundHunter fox = predator.GetComponent<GroundHunter>();
+        if (fox != null)
+        {
+            fox.Stun(stunSeconds);
+            var foxAgent = predator.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (foxAgent != null && foxAgent.isOnNavMesh) foxAgent.Move(away * 4f);
+        }
 
         ChasesThisRound++;
         int total = PlayerPrefs.GetInt("FNL.buddyChases", 0) + 1;

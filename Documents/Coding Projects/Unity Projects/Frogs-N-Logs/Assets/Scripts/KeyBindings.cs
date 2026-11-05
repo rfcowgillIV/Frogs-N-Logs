@@ -6,7 +6,8 @@ using UnityEngine;
 // as well, so nobody can lock themselves out by remapping. Start is always Space/Enter
 // and Escape always pauses for the same reason.
 //
-// Gamepads work too (Nov 2026): left stick moves, A starts, Start pauses, X fires the laser.
+// Gamepads work too (Nov 2026): left stick moves, A starts (and dodge-hops while playing),
+// B flicks the tongue, X fires the laser, Start pauses.
 //
 // Have it your way: frogs don't judge your keyboard layout.
 public static class KeyBindings
@@ -17,8 +18,10 @@ public static class KeyBindings
     public const string Right = "right";
     public const string Pause = "pause";
     public const string Laser = "laser";
+    public const string Tongue = "tongue";
+    public const string DodgeHop = "dodge";
 
-    public static readonly string[] Actions = { Up, Down, Left, Right, Pause, Laser };
+    public static readonly string[] Actions = { Up, Down, Left, Right, Pause, Laser, Tongue, DodgeHop };
 
     public static KeyCode DefaultFor(string action)
     {
@@ -29,6 +32,8 @@ public static class KeyBindings
             case Left: return KeyCode.A;
             case Right: return KeyCode.D;
             case Laser: return KeyCode.L;
+            case Tongue: return KeyCode.E;
+            case DodgeHop: return KeyCode.LeftShift;
             default: return KeyCode.P;
         }
     }
@@ -42,6 +47,8 @@ public static class KeyBindings
             case Left: return "Move left";
             case Right: return "Move right";
             case Laser: return "Fire laser (shop)";
+            case Tongue: return "Tongue flick";
+            case DodgeHop: return "Dodge hop";
             default: return "Pause";
         }
     }
@@ -123,6 +130,17 @@ public static class KeyBindings
     public static bool LaserPressed()
     {
         return Input.GetKeyDown(Get(Laser)) || Input.GetKeyDown(KeyCode.JoystickButton2);
+    }
+
+    // Nov 2026: tongue flick (E, gamepad B) and dodge hop (Shift, gamepad A while playing).
+    public static bool TonguePressed()
+    {
+        return Input.GetKeyDown(Get(Tongue)) || Input.GetKeyDown(KeyCode.JoystickButton1);
+    }
+
+    public static bool DodgePressed()
+    {
+        return Input.GetKeyDown(Get(DodgeHop)) || Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.JoystickButton0);
     }
 
     public static string KeyName(KeyCode key)

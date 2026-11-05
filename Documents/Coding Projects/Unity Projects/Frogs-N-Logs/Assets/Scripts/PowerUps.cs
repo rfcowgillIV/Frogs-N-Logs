@@ -97,5 +97,7 @@ public static class FrogEffects
         }
         SnakeHazard snake = attacker.GetComponentInParent<SnakeHazard>();
         if (snake != null) snake.Stun(seconds);
+        GroundHunter fox = attacker.GetComponentInParent<GroundHunter>();
+        if (fox != null) fox.Stun(seconds);
     }
 }

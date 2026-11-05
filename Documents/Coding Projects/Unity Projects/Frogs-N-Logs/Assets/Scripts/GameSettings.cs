@@ -122,6 +122,9 @@ public static class GameSettings
         Save();
     }
 
+    // For settings stored elsewhere (e.g. LevelProgress): save and tell the menus to refresh.
+    public static void NotifyChanged() { Save(); }
+
     private static void Save()
     {
         PlayerPrefs.Save();

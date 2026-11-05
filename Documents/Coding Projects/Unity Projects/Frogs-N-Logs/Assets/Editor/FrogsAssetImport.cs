@@ -4,7 +4,7 @@
 //   Resources/Characters  - the frog and eagle: simple ("legacy") looping animations, so
 //                           CharacterVisual.cs can play "idle", "walk", "Flying" by name.
 //   Resources/Nature      - trees, plants and rocks: no animation, no colliders.
-//   */Textures            - capped at 512 px (plenty for a cartoon look), leaves keep alpha.
+//   */Textures, Biomes    - up to 2048 px in the desktop apps, 1024 px on the web and phones.
 //   Resources/Audio       - short sound effects: mono, loaded when the game starts.
 // See CREDITS.md for who made each asset (all free: CC0 or CC BY).
 
@@ -46,13 +46,31 @@ namespace FrogsNLogs.EditorTools
             }
         }
 
+        // Nov 2026: full-detail (up to 2048 px) art for the desktop apps, and a lighter 1024 px
+        // copy for the web and phones, so downloads stay quick and weaker devices stay smooth.
+        // Mipmaps let far-away ground use smaller copies automatically.
         void OnPreprocessTexture()
         {
-            if (!In("Characters/Textures") && !In("Nature/Textures") && !In("Textures")) return;
+            bool biome = In("Biomes");
+            if (!In("Characters/Textures") && !In("Nature/Textures") && !In("Textures") && !biome) return;
             var tex = (TextureImporter)assetImporter;
-            tex.maxTextureSize = 512;
+            tex.maxTextureSize = 2048;
             tex.mipmapEnabled = true;
             tex.alphaIsTransparency = tex.DoesSourceTextureHaveAlpha();
+            if (biome)
+            {
+                tex.wrapMode = TextureWrapMode.Repeat;
+                tex.anisoLevel = 4; // ground seen at an angle stays sharp
+            }
+            foreach (string platform in new[] { "WebGL", "Android", "iPhone" })
+            {
+                TextureImporterPlatformSettings p = tex.GetPlatformTextureSettings(platform);
+                p.overridden = true;
+                p.maxTextureSize = 1024;
+                p.format = TextureImporterFormat.Automatic;
+                p.compressionQuality = 60;
+                tex.SetPlatformTextureSettings(p);
+            }
         }
 
         void OnPreprocessAudio()

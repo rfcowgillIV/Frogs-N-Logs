@@ -179,10 +179,14 @@ public static class Achievements
         new[] { "golden", "Golden touch", "Eat a golden fly" },
         new[] { "dizzy", "Dizzy bird", "Stun the bird 3 times" },
         new[] { "shopper", "Shopper", "Buy something in the shop" },
-        new[] { "survived", "Night survivor", "Survive the Night and see the credits" },
+        new[] { "survived", "Owl dodger", "Survive the Great Owl and see the credits" },
         new[] { "combo", "Combo king", "Reach an x8 fly combo" },
         new[] { "buddy", "Best buddy", "Your helper chases off 5 predators" },
         new[] { "daily", "Daily hopper", "Finish a daily challenge" },
+        new[] { "lake", "Lily hopper", "Reach Lily Pad Lake" },
+        new[] { "winter", "Snow frog", "Reach the Winter Freeze" },
+        new[] { "allstars", "Star frog", "Earn all 3 stars on every level" },
+        new[] { "tongue", "Long tongue", "Catch 25 flies with your tongue" },
     };
 
     public static bool Has(string id) { return PlayerPrefs.GetInt("FNL.ach." + id, 0) == 1; }

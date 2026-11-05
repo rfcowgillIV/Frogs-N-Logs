@@ -1,7 +1,7 @@
 # Credits
 
 Everyone whose work is in Frogs-N-Logs. The same list is in the game: **Credits** on the
-title screen, and it rolls when you survive the Night. (Keep it in sync with
+title screen, and it rolls when you beat the Great Owl at the end of the Winter Freeze. (Keep it in sync with
 `Assets/Scripts/Credits.cs`.)
 
 ## Game
@@ -17,12 +17,19 @@ title screen, and it rolls when you survive the Night. (Keep it in sync with
 | Eagle, and the helper buddies: dog, cat, wolf (animated) | "Animal Pack Vol. 2" | Quaternius | quaternius.com |
 | Trees (incl. twisted and dead trees), bushes, ferns, reeds, flowers, mushrooms, rocks, grass | "Stylized Nature MegaKit" | Quaternius | quaternius.com |
 
+## Textures (CC0)
+
+| What | Asset | Source |
+|---|---|---|
+| Lily Pad Lake grass, Autumn leaves, Winter snow, ice | Grass004, ScatteredLeaves008, Snow010A, Ice002 | ambientCG (ambientcg.com) |
+
 CC0 doesn't require credit, but they deserve it.
 
 ## Music
 
 "Fluffing a Duck" (title and credits), "Carefree" (The Pond), "Sneaky Snitch" (The Swamp),
-"Investigations" (Night) — **Kevin MacLeod (incompetech.com)**
+"Investigations" (Night), "Easy Lemon" (Lily Pad Lake), "Thatched Villagers" (Autumn Woods),
+"Frost Waltz" (Winter Freeze), "Volatile Reaction" (the Great Owl) — **Kevin MacLeod (incompetech.com)**
 Licensed under Creative Commons: By Attribution 4.0 License
 http://creativecommons.org/licenses/by/4.0/
 
@@ -35,7 +42,7 @@ http://creativecommons.org/licenses/by/4.0/
 | Menu clicks, level-up and game-over jingles | "Interface Sounds", "Music Jingles" | Kenney (kenney.nl) |
 | Power-up | "New thing get!" | congusbongus |
 | Win jingle | "Win Jingle" | Fupi |
-| Laser zap, shield pop | "100 CC0 SFX" | rubberduck |
+| Laser zap, shield pop, tongue, dodge, splash, ice crack, bounce, bee sting, leaf rustle | "100 CC0 SFX" | rubberduck |
 | Night crickets | "Bird, cricket, frog and mosquito sounds" | Aj_ |
 
 The bird calls, footsteps, swamp ambience and fly buzz are from the original 2017 project.
