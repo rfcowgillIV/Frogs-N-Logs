@@ -129,7 +129,7 @@ public class Biome : MonoBehaviour
     {
         SetGround("Biomes/Ground_Lake", new Color(0.95f, 1f, 0.92f), 36f);
         RaiseWater(0.2f);   // ankle-deep: the frog wades rather than disappears
-        TintWater(new Color(0.3f, 0.72f, 0.82f, 0.6f), new Color(0.12f, 0.45f, 0.65f, 0.75f));
+        TintWater(new Color(0.42f, 0.82f, 0.88f, 0.55f), new Color(0.18f, 0.55f, 0.75f, 0.7f));
         // Lily pads on the water: dry ground to hop across (and a few flowers).
         int placed = 0;
         for (int i = 0; i < 400 && placed < 46; i++)
@@ -227,6 +227,9 @@ public class Biome : MonoBehaviour
             Material m = new Material(originalWater[r]) { hideFlags = HideFlags.DontSave };
             m.SetColor("_ShallowColor", shallow);
             m.SetColor("_DeepColor", deep);
+            // Calmer lake: wider, softer ripples.
+            m.SetFloat("_RippleScale", 0.55f);
+            m.SetColor("_RippleColor", new Color(0.9f, 0.97f, 1f, 0.5f));
             r.sharedMaterial = m;
         }
     }
