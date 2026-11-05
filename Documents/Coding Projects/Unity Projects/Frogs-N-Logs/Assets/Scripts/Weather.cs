@@ -19,6 +19,7 @@ public class Weather : MonoBehaviour
     {
         Instance = this;
         Raining = false;
+        nextCheck = float.MaxValue; // no storm until a stormy level rolls one
         LevelManager.LevelChanged += OnLevelChanged;
     }
 

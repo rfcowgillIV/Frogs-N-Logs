@@ -228,8 +228,8 @@ public class Biome : MonoBehaviour
             m.SetColor("_ShallowColor", shallow);
             m.SetColor("_DeepColor", deep);
             // Calmer lake: wider, softer ripples.
-            m.SetFloat("_RippleScale", 0.55f);
-            m.SetColor("_RippleColor", new Color(0.9f, 0.97f, 1f, 0.5f));
+            // Calm lake: no ripple lines, just the sparkles and soft colour pools.
+            m.SetColor("_RippleColor", shallow);
             r.sharedMaterial = m;
         }
     }

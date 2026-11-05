@@ -56,7 +56,7 @@ public class BossOwl : MonoBehaviour
                 block.SetColor("_Recolor", new Color(0.96f, 0.97f, 1f, 0.9f));
                 r.SetPropertyBlock(block);
             }
-            owl.transform.localScale *= 2.4f;
+            owl.transform.localScale *= 1.8f;
             Animation anim = owl.GetComponentInChildren<Animation>();
             if (anim != null)
             {
