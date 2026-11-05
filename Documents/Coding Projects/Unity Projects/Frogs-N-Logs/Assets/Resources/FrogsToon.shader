@@ -88,7 +88,7 @@ Shader "Frogs/Toon"
                 // Skins (Nov 2026): recolour the texture instead of multiplying it, so a dark
                 // green frog can really turn pink or gold. Keeps the spots and shading.
                 half lum = dot(tex.rgb, half3(0.3, 0.59, 0.11));
-                tex.rgb = lerp(tex.rgb, saturate(lum * 3.2) * _Recolor.rgb, _Recolor.a);
+                tex.rgb = lerp(tex.rgb, saturate(lum * 4.2) * _Recolor.rgb, _Recolor.a);
                 float3 n = normalize(i.normalWS) * (frontFace ? 1 : -1);
                 Light l = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 half ndl = dot(n, l.direction);
