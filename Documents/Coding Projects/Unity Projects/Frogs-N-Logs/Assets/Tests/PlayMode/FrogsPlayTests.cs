@@ -748,7 +748,7 @@ namespace FrogsNLogs.Tests
             if (newFrog != null)
             {
                 var block = new MaterialPropertyBlock();
-                newFrog.GetComponentInChildren<Renderer>().GetPropertyBlock(block);
+                newFrog.GetComponentInChildren<SkinnedMeshRenderer>().GetPropertyBlock(block); // (not the hat)
                 Color recolor = block.GetColor("_Recolor");
                 Assert.AreEqual(1f, recolor.a, 0.01f, "The golden skin should recolour the frog");
                 Assert.Greater(recolor.r, recolor.b + 0.3f, "...in gold");
