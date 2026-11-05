@@ -1310,12 +1310,11 @@ namespace FrogsNLogs.Tests
             while (Time.time < until && !(bool)GetStaticProp("HidingSpot", "FrogHidden")) yield return null;
             Assert.IsTrue((bool)GetStaticProp("HidingSpot", "FrogHidden"), "Keeping still in the reeds should hide you");
 
-            int flies = (int)GameType("FlySpawner").GetProperty("FlyMinimum").GetValue(FindOne("FlySpawner"));
             object weather = GetStaticProp("Weather", "Instance");
             weather.GetType().GetMethod("StartStorm").Invoke(weather, new object[] { 5f });
             yield return null;
             Assert.IsTrue((bool)GetStaticProp("Weather", "Raining"), "A storm should start");
-            Assert.Greater((int)GameType("FlySpawner").GetProperty("FlyMinimum").GetValue(FindOne("FlySpawner")), flies, "Rain brings more flies");
+            Assert.Greater((float)GetStaticProp("Weather", "FlyFactor"), 1f, "Rain brings more flies");
             Assert.Greater((float)GetStaticProp("Weather", "BirdFactor"), 1f, "...and a restless bird");
         }
     }

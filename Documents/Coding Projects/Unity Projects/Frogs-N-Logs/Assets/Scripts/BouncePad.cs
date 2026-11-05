@@ -22,7 +22,7 @@ public class BouncePad : MonoBehaviour
             model = Instantiate(prefab, root.transform);
             foreach (Collider c in model.GetComponentsInChildren<Collider>()) Destroy(c);
             foreach (Renderer r in model.GetComponentsInChildren<Renderer>()) Stylizer.ToToon(r);
-            model.transform.localScale *= 3.2f;
+            model.transform.localScale *= 6f;
         }
         else
         {
@@ -38,7 +38,7 @@ public class BouncePad : MonoBehaviour
 
         var trigger = root.AddComponent<SphereCollider>();
         trigger.isTrigger = true;
-        trigger.radius = 1.3f;
+        trigger.radius = 1.6f;
         trigger.center = new Vector3(0f, 0.6f, 0f);
         return pad;
     }

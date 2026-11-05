@@ -128,7 +128,8 @@ public class Biome : MonoBehaviour
     private void BuildLake()
     {
         SetGround("Biomes/Ground_Lake", new Color(0.95f, 1f, 0.92f), 36f);
-        RaiseWater(0.38f);
+        RaiseWater(0.2f);   // ankle-deep: the frog wades rather than disappears
+        TintWater(new Color(0.3f, 0.72f, 0.82f, 0.6f), new Color(0.12f, 0.45f, 0.65f, 0.75f));
         // Lily pads on the water: dry ground to hop across (and a few flowers).
         int placed = 0;
         for (int i = 0; i < 400 && placed < 46; i++)
@@ -215,6 +216,19 @@ public class Biome : MonoBehaviour
             r.transform.position = originalWaterPos[r] + Vector3.up * by;
         }
         WaterLevel = baseWaterLevel + by;
+    }
+
+    // Clearer, bluer lake water (the toon water shader's shallow and deep colours).
+    private void TintWater(Color shallow, Color deep)
+    {
+        foreach (Renderer r in water)
+        {
+            if (r == null) continue;
+            Material m = new Material(originalWater[r]) { hideFlags = HideFlags.DontSave };
+            m.SetColor("_ShallowColor", shallow);
+            m.SetColor("_DeepColor", deep);
+            r.sharedMaterial = m;
+        }
     }
 
     private void FreezeWater()

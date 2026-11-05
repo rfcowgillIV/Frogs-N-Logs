@@ -265,8 +265,8 @@ public class LevelManager : MonoBehaviour
             // Dawn over the lake: low pink-orange sun and a light morning mist.
             l.fog = true;
             l.fogMode = FogMode.Exponential;
-            l.fogColor = new Color(0.95f, 0.78f, 0.72f);
-            l.fogDensity = 0.012f;
+            l.fogColor = new Color(0.92f, 0.82f, 0.8f);
+            l.fogDensity = 0.006f;
             l.ambient = Color.Lerp(day.ambient, new Color(0.75f, 0.62f, 0.7f), 0.5f);
             l.ambientIntensity = day.ambientIntensity * 0.9f;
             l.sunColor = new Color(1f, 0.72f, 0.55f);

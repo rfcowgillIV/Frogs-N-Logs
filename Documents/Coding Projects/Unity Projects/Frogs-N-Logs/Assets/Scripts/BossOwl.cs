@@ -56,7 +56,7 @@ public class BossOwl : MonoBehaviour
                 block.SetColor("_Recolor", new Color(0.96f, 0.97f, 1f, 0.9f));
                 r.SetPropertyBlock(block);
             }
-            owl.transform.localScale *= 4.5f;
+            owl.transform.localScale *= 3.5f;
             Animation anim = owl.GetComponentInChildren<Animation>();
             if (anim != null)
             {
@@ -91,7 +91,8 @@ public class BossOwl : MonoBehaviour
 
         // Circle overhead, diving down towards each strike.
         angle += Time.deltaTime * 0.6f;
-        Vector3 circle = frog.position + new Vector3(Mathf.Cos(angle) * 11f, 12f, Mathf.Sin(angle) * 11f);
+        // Low and close enough to see on screen.
+        Vector3 circle = frog.position + new Vector3(Mathf.Cos(angle) * 7f, 6.5f, Mathf.Sin(angle) * 5f + 1.5f);
         if (model != null)
         {
             Vector3 goal = circle;
