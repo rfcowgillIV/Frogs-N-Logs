@@ -63,10 +63,13 @@ public class HidingSpot : MonoBehaviour
         current = this;
     }
 
-    // One place updates the shared "hidden" state (the first spot in the scene).
+    // The shared "hidden" state is updated once per frame (by whichever spot runs first).
+    private static int updatedFrame = -1;
+
     void Update()
     {
-        if (current != null && current != this) return;
+        if (updatedFrame == Time.frameCount) return;
+        updatedFrame = Time.frameCount;
         bool inside = Time.time - lastInside < 0.15f;
         GameState game = GameState.Current;
         if (game == null || !game.IsPlaying) inside = false;

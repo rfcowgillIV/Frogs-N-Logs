@@ -1300,7 +1300,10 @@ namespace FrogsNLogs.Tests
             yield return StartGame();
             KeepFrogSafe(60f);
             yield return null;
-            Component spot = FindOne("HidingSpot");
+            // The reeds nearest the middle (inside the Pond's walls).
+            Component spot = null;
+            foreach (Component c in Object.FindObjectsByType(GameType("HidingSpot"), FindObjectsSortMode.None).Cast<Component>())
+                if (spot == null || Flat(c.transform.position).magnitude < Flat(spot.transform.position).magnitude) spot = c;
             Assert.IsNotNull(spot, "There should be reeds to hide in");
             GameObject frog = GameObject.FindWithTag("Player");
             Vector3 p = spot.transform.position;
