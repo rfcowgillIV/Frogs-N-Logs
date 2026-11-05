@@ -13,6 +13,7 @@ Shader "Frogs/Toon"
         _Shine ("Shine", Range(0, 1)) = 0.2
         _RimStrength ("Rim light", Range(0, 1)) = 0.25
         _ShadeLevel ("Shadow brightness", Range(0, 1)) = 0.55
+        _Recolor ("Skin recolour (alpha = amount)", Color) = (1, 1, 1, 0)
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
     }
     SubShader
@@ -30,6 +31,7 @@ Shader "Frogs/Toon"
             half _RimStrength;
             half _ShadeLevel;
             half _Cull;
+            half4 _Recolor;
         CBUFFER_END
         ENDHLSL
 
@@ -83,6 +85,10 @@ Shader "Frogs/Toon"
                 UNITY_SETUP_INSTANCE_ID(i);
                 half4 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor;
                 clip(tex.a - _Cutoff);
+                // Skins (Nov 2026): recolour the texture instead of multiplying it, so a dark
+                // green frog can really turn pink or gold. Keeps the spots and shading.
+                half lum = dot(tex.rgb, half3(0.3, 0.59, 0.11));
+                tex.rgb = lerp(tex.rgb, saturate(lum * 3.2) * _Recolor.rgb, _Recolor.a);
                 float3 n = normalize(i.normalWS) * (frontFace ? 1 : -1);
                 Light l = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 half ndl = dot(n, l.direction);

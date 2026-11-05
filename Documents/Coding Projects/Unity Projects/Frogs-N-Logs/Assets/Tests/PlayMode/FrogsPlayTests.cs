@@ -743,6 +743,17 @@ namespace FrogsNLogs.Tests
             Assert.Greater((float)GetStatic("PlayerMovement", "SpeedMultiplier"), 1.05f, "Strong legs should speed the frog up");
             Assert.IsNotNull(GameObject.Find("Frog Hat"), "The crown should be on the frog");
 
+            // Golden frog really turns gold on the cartoon model (recolour, not just a tint).
+            GameObject newFrog = GameObject.Find("Frog (new model)");
+            if (newFrog != null)
+            {
+                var block = new MaterialPropertyBlock();
+                newFrog.GetComponentInChildren<Renderer>().GetPropertyBlock(block);
+                Color recolor = block.GetColor("_Recolor");
+                Assert.AreEqual(1f, recolor.a, 0.01f, "The golden skin should recolour the frog");
+                Assert.Greater(recolor.r, recolor.b + 0.3f, "...in gold");
+            }
+
             // Double flies: next fly is worth 2.
             int before = (int)GetStatic("ScoreCounter", "score");
             Component another = FindOne("FlyPickUp");

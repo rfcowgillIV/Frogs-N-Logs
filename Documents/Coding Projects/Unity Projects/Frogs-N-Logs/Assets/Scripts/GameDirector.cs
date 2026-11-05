@@ -350,6 +350,7 @@ public class GameDirector : MonoBehaviour
 
         Shop.Item skin = Shop.Find(Shop.EquippedSkin);
         Color tint = skin != null ? skin.tint : Color.white;
+        bool golden = skin != null && skin.id == "skin.gold";
         var block = new MaterialPropertyBlock();
         foreach (Renderer r in frog.GetComponentsInChildren<Renderer>(true))
         {
@@ -358,8 +359,12 @@ public class GameDirector : MonoBehaviour
             if (tint == Color.white) block.Clear();
             else
             {
-                block.SetColor("_Color", tint);
-                block.SetColor("_BaseColor", tint);
+                // Nov 2026: the cartoon frog's texture is dark green, so multiplying it by a
+                // colour couldn't make it pink or gold. Recolour it instead (FrogsToon _Recolor).
+                block.SetColor("_Color", tint);                                   // 2017 shader
+                block.SetColor("_Recolor", new Color(tint.r, tint.g, tint.b, 1f)); // cartoon frog
+                block.SetFloat("_Shine", golden ? 1f : 0.2f);                      // gold shines
+                block.SetFloat("_RimStrength", golden ? 0.6f : 0.25f);
             }
             r.SetPropertyBlock(block);
         }
