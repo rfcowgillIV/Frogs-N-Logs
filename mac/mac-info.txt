@@ -1,0 +1,6 @@
+architectures: x86_64 arm64
+Executable=/Users/runner/work/Frogs-N-Logs/Frogs-N-Logs/app/Frogs-N-Logs.app/Contents/MacOS/Frogs-N-Logs
+Identifier=com.freddietindlecowgill.frogsnlogs
+Format=app bundle with Mach-O universal (x86_64 arm64)
+CodeDirectory v=20400 size=508 flags=0x2(adhoc) hashes=9+3 location=embedded
+Signature=adhoc

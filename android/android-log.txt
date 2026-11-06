@@ -1,0 +1,349 @@
+11-06 04:43:41.636     0     0 I dyndbg  : Ignore empty _ddebug table in a CONFIG_DYNAMIC_DEBUG_CORE build
+11-06 04:43:46.437     0     0 I init    : linkerconfig generated /linkerconfig with mounted APEX modules info
+11-06 04:43:49.167     0     0 I init    : linkerconfig generated /linkerconfig with mounted APEX modules info
+11-06 04:43:51.193   467   467 I libc    : malloc_limit: Allocation limit enabled, max size 519076240 bytes
+11-06 04:43:51.279   469   469 I libc    : malloc_limit: Allocation limit enabled, max size 134217728 bytes
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->peekLong(JZ)J from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->pokeLong(JJZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->pokeInt(JIZ)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->peekInt(JZ)I from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->pokeByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:51.820   335   335 W zygote64: Core platform API violation: Llibcore/io/Memory;->peekByteArray(J[BII)V from Lcom/android/framework/protobuf/UnsafeUtil; using reflection
+11-06 04:43:53.146   520   520 D CompatConfig: Found a config file: /apex/com.android.art/etc/compatconfig/libcore-platform-compat-config.xml
+11-06 04:43:53.222   520   544 W SystemConfig: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:43:53.222   520   544 W SystemConfig: 	at libcore.io.Linux.open(Native Method)
+11-06 04:43:53.222   520   544 W SystemConfig: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:43:53.222   520   544 W SystemConfig: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:43:53.222   520   544 W SystemConfig: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:43:56.872   520   520 E ArtService: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:43:56.872   520   520 E ArtService: 	at libcore.io.Linux.open(Native Method)
+11-06 04:43:56.872   520   520 E ArtService: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:43:56.872   520   520 E ArtService: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:43:56.872   520   520 E ArtService: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:02.639   520   520 I ContentCaptureHelper: Setting logging level to DEBUG
+11-06 04:44:02.818   520   520 W system_server: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Landroid/net/connectivity/com/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:02.818   520   520 W system_server: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Landroid/net/connectivity/com/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:03.010   520   520 E AppIdleHistory: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:03.010   520   520 E AppIdleHistory: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:03.010   520   520 E AppIdleHistory: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:03.010   520   520 E AppIdleHistory: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:03.010   520   520 E AppIdleHistory: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:03.040   520   749 W FileUtils: 	at libcore.io.Linux.chmod(Native Method)
+11-06 04:44:03.040   520   749 W FileUtils: 	at libcore.io.ForwardingOs.chmod(ForwardingOs.java:165)
+11-06 04:44:03.040   520   749 W FileUtils: 	at libcore.io.BlockGuardOs.chmod(BlockGuardOs.java:83)
+11-06 04:44:03.230   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_avcdec.so
+11-06 04:44:03.232   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_hevcdec.so
+11-06 04:44:03.233   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_vp8dec.so
+11-06 04:44:03.235   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_vp9dec.so
+11-06 04:44:03.337   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_avcdec.so
+11-06 04:44:03.338   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_hevcdec.so
+11-06 04:44:03.339   352   388 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_vp8dec.so
+11-06 04:44:03.342   352   352 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_vp9dec.so
+11-06 04:44:03.693   950   950 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+11-06 04:44:04.653  1015  1015 I a2dp_vendor_ldac_decoder: packages/modules/Bluetooth/system/stack/a2dp/a2dp_vendor_ldac_decoder.cc:130 A2DP_VendorLoadDecoderLdac: A2DP_VendorLoadDecoderLdac: cannot open LDAC decoder library libldacBT_bco.so: dlopen failed: library "libldacBT_bco.so" not found
+11-06 04:44:04.654  1015  1015 I a2dp_vendor_ldac_decoder: packages/modules/Bluetooth/system/stack/a2dp/a2dp_vendor_ldac_decoder.cc:130 A2DP_VendorLoadDecoderLdac: A2DP_VendorLoadDecoderLdac: cannot open LDAC decoder library libldacBT_bco.so: dlopen failed: library "libldacBT_bco.so" not found
+11-06 04:44:04.655  1015  1015 I a2dp_vendor_ldac_decoder: packages/modules/Bluetooth/system/stack/a2dp/a2dp_vendor_ldac_decoder.cc:130 A2DP_VendorLoadDecoderLdac: A2DP_VendorLoadDecoderLdac: cannot open LDAC decoder library libldacBT_bco.so: dlopen failed: library "libldacBT_bco.so" not found
+11-06 04:44:04.656  1015  1015 I a2dp_vendor_ldac_decoder: packages/modules/Bluetooth/system/stack/a2dp/a2dp_vendor_ldac_decoder.cc:130 A2DP_VendorLoadDecoderLdac: A2DP_VendorLoadDecoderLdac: cannot open LDAC decoder library libldacBT_bco.so: dlopen failed: library "libldacBT_bco.so" not found
+11-06 04:44:04.657  1015  1015 I a2dp_vendor_ldac_decoder: packages/modules/Bluetooth/system/stack/a2dp/a2dp_vendor_ldac_decoder.cc:130 A2DP_VendorLoadDecoderLdac: A2DP_VendorLoadDecoderLdac: cannot open LDAC decoder library libldacBT_bco.so: dlopen failed: library "libldacBT_bco.so" not found
+11-06 04:44:04.657  1015  1015 I a2dp_vendor_ldac_decoder: packages/modules/Bluetooth/system/stack/a2dp/a2dp_vendor_ldac_decoder.cc:130 A2DP_VendorLoadDecoderLdac: A2DP_VendorLoadDecoderLdac: cannot open LDAC decoder library libldacBT_bco.so: dlopen failed: library "libldacBT_bco.so" not found
+11-06 04:44:04.866  1304  1350 W oadcastreceiver: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:04.866  1304  1350 W oadcastreceiver: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:06.846   520   749 W FileUtils: 	at libcore.io.Linux.chmod(Native Method)
+11-06 04:44:06.846   520   749 W FileUtils: 	at libcore.io.ForwardingOs.chmod(ForwardingOs.java:165)
+11-06 04:44:06.846   520   749 W FileUtils: 	at libcore.io.BlockGuardOs.chmod(BlockGuardOs.java:83)
+11-06 04:44:06.847   520   749 W FileUtils: 	at libcore.io.Linux.chmod(Native Method)
+11-06 04:44:06.847   520   749 W FileUtils: 	at libcore.io.ForwardingOs.chmod(ForwardingOs.java:165)
+11-06 04:44:06.847   520   749 W FileUtils: 	at libcore.io.BlockGuardOs.chmod(BlockGuardOs.java:83)
+11-06 04:44:07.199  1510  1630 W DataFileManager: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:07.199  1510  1630 W DataFileManager: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:07.199  1510  1630 W DataFileManager: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:07.199  1510  1630 W DataFileManager: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:07.199  1510  1630 W DataFileManager: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:07.199  1510  1630 W DataFileManager: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:07.264   520  1607 W system_server: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/server/appsearch/protobuf/UnsafeUtil; using reflection
+11-06 04:44:07.268   520  1607 W system_server: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/server/appsearch/protobuf/UnsafeUtil; using reflection
+11-06 04:44:08.090   352   866 I GoldfishComponentStore: loading dll of path libcodec2_goldfish_hevcdec.so
+11-06 04:44:09.243  2036  2036 I UserRestrictionsPolicyHandler: Build type DEBUG = true
+11-06 04:44:09.956  1665  2292 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:09.956  1665  2292 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:09.957  1665  2292 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:09.957  1665  2292 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:09.957  1665  2292 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:09.957  1665  2292 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:09.957  1665  2292 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:09.957  1665  2292 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:269)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:272)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.fstat(BlockGuardOs.java:194)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.fstat(ForwardingOs.java:261)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.IoBridge.open(IoBridge.java:563)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.write(BlockGuardOs.java:447)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.write(ForwardingOs.java:943)
+11-06 04:44:10.857  1814  1814 D StrictMode: 	at libcore.io.IoBridge.write(IoBridge.java:646)
+11-06 04:44:10.858  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.chmod(BlockGuardOs.java:81)
+11-06 04:44:10.858  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.chmod(ForwardingOs.java:165)
+11-06 04:44:10.858  1814  1814 D StrictMode: 	at libcore.io.BlockGuardOs.stat(BlockGuardOs.java:419)
+11-06 04:44:10.858  1814  1814 D StrictMode: 	at libcore.io.ForwardingOs.stat(ForwardingOs.java:846)
+11-06 04:44:14.100  1605  2113 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:14.100  1605  2113 W SnapshotHandler: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:14.100  1605  2113 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:14.100  1605  2113 W SnapshotHandler: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:14.100  1605  2113 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:14.100  1605  2113 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:15.484  1605  1817 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:15.484  1605  1817 W SnapshotHandler: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:15.484  1605  1817 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:15.484  1605  1817 W SnapshotHandler: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:15.484  1605  1817 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:15.484  1605  1817 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:15.954   520   749 W system_server: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/wifi/x/com/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:15.954   520   749 W system_server: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/wifi/x/com/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:18.952  1665  1665 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:18.952  1665  1665 W SnapshotHandler: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:18.952  1665  1665 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:18.952  1665  1665 W SnapshotHandler: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:18.952  1665  1665 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:18.952  1665  1665 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:19.402  3211  3228 W ziparchive: Unable to open '/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/base.dm': No such file or directory
+11-06 04:44:19.402  3211  3228 W ziparchive: Unable to open '/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/base.dm': No such file or directory
+11-06 04:44:19.413  1665  2281 D StrictMode: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:269)
+11-06 04:44:19.413  1665  2281 D StrictMode: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:19.413  1665  2281 D StrictMode: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:19.413  1665  2281 D StrictMode: 	at libcore.io.BlockGuardOs.fstat(BlockGuardOs.java:194)
+11-06 04:44:19.413  1665  2281 D StrictMode: 	at libcore.io.ForwardingOs.fstat(ForwardingOs.java:261)
+11-06 04:44:19.413  1665  2281 D StrictMode: 	at libcore.io.IoBridge.open(IoBridge.java:563)
+11-06 04:44:19.425  3211  3228 I artd    : Running dex2oat: /apex/com.android.art/bin/art_exec --drop-capabilities --set-task-profile=Dex2OatBootComplete --set-priority=background --keep-fds=7:8:9:10 -- /apex/com.android.art/bin/dex2oat64 --zip-fd=7 --zip-location=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/base.apk --oat-fd=8 --oat-location=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/oat/x86_64/base.odex --output-vdex-fd=9 --swap-fd=10 --class-loader-context=PCL[] --classpath-dir=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg== --instruction-set=x86_64 --instruction-set-features=default --instruction-set-variant=x86_64 --compiler-filter=verify --compilation-reason=install --compact-dex-level=none --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --runtime-arg -Xtarget-sdk-version:36 --runtime-arg -Xhidden-api-policy:enabled --runtime-arg -Xms64m --runtime-arg -Xmx512m --comments=app-version-name:1.2.0,app-version-code:4,art-version:340818082
+11-06 04:44:19.425  3211  3228 I artd    : Opened FDs: 7:/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/base.apk 8:/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/oat/x86_64/base.odex.CUOhL8.tmp 9:/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/oat/x86_64/base.vdex.0AGbKI.tmp 10:/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/oat/x86_64/base.odex.swap.2RpCfj.tmp 
+11-06 04:44:19.432  1665  2281 D StrictMode: 	at libcore.io.BlockGuardOs.read(BlockGuardOs.java:324)
+11-06 04:44:19.432  1665  2281 D StrictMode: 	at libcore.io.ForwardingOs.read(ForwardingOs.java:613)
+11-06 04:44:19.432  1665  2281 D StrictMode: 	at libcore.io.IoBridge.read(IoBridge.java:604)
+11-06 04:44:19.680  3247  3247 W dex2oat64: /apex/com.android.art/bin/dex2oat64 --zip-fd=7 --zip-location=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/base.apk --oat-fd=8 --oat-location=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/oat/x86_64/base.odex --output-vdex-fd=9 --swap-fd=10 --class-loader-context=PCL[] --classpath-dir=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg== --instruction-set=x86_64 --instruction-set-features=default --instruction-set-variant=x86_64 --compiler-filter=verify --compilation-reason=install --compact-dex-level=none --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --runtime-arg -Xtarget-sdk-version:36 --runtime-arg -Xhidden-api-policy:enabled --runtime-arg -Xms64m --runtime-arg -Xmx512m --comments=app-version-name:1.2.0,app-version-code:4,art-version:340818082
+11-06 04:44:19.783  3247  3247 I dex2oat64: /apex/com.android.art/bin/dex2oat64 --output-vdex-fd=9 --class-loader-context=PCL[] --classpath-dir=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg== --compiler-filter=verify --compilation-reason=install --compact-dex-level=none --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --comments=app-version-name:1.2.0,app-version-code:4,art-version:340818082
+11-06 04:44:19.938   520   570 I ArtService: Dexopt result: [packageName = com.freddietindlecowgill.frogsnlogs] DexContainerFileDexoptResult{dexContainerFile=/data/app/~~S0ocewtxCKXsEXYdir1gMg==/com.freddietindlecowgill.frogsnlogs-kJEqQFDXzic0L0GadkMOGg==/base.apk, primaryAbi=true, abi=x86_64, actualCompilerFilter=verify, status=PERFORMED, dex2oatWallTimeMillis=401, dex2oatCpuTimeMillis=60, sizeBytes=204152, sizeBeforeBytes=0}
+11-06 04:44:19.945   520   570 V BackupManagerService: [UserID:0] restoreAtInstall pkg=com.freddietindlecowgill.frogsnlogs token=1 restoreSet=0
+11-06 04:44:20.116   826  3331 E BackupHelper: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:20.116   826  3331 E BackupHelper: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:20.116   826  3331 E BackupHelper: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:20.116   826  3331 E BackupHelper: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:20.116   826  3331 E BackupHelper: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:20.116   826  3331 E BackupHelper: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:20.442  3334  3334 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-06 04:44:20.445  3334  3334 I AndroidRuntime: Using default boot image
+11-06 04:44:20.446  3334  3334 I AndroidRuntime: Leaving lock profiling enabled
+11-06 04:44:20.612   520   796 I SdkSandboxManager: No SDKs used. Skipping SDK data reconcilation for CallingInfo{mUid=10192, mPackageName='com.freddietindlecowgill.frogsnlogs, mAppProcessToken='null'}
+11-06 04:44:20.631   520   520 V GameManagerService_GamePackageConfiguration: No android.game_mode_config meta-data found for package com.freddietindlecowgill.frogsnlogs
+11-06 04:44:20.680   520   520 V GameManagerService: Package configuration not found for com.freddietindlecowgill.frogsnlogs
+11-06 04:44:20.746  3334  3334 W libc    : Access denied finding property "ro.product.name_for_attestation"
+11-06 04:44:20.746  3334  3334 W libc    : Access denied finding property "ro.product.brand_for_attestation"
+11-06 04:44:20.747  3334  3334 W libc    : Access denied finding property "ro.product.model_for_attestation"
+11-06 04:44:20.748  3334  3334 D AndroidRuntime: Calling main entry com.android.commands.monkey.Monkey
+11-06 04:44:20.766  3334  3334 W Monkey  : args: [-p, com.freddietindlecowgill.frogsnlogs, -c, android.intent.category.LAUNCHER, 1]
+11-06 04:44:20.766  3334  3334 W Monkey  :  arg: "com.freddietindlecowgill.frogsnlogs"
+11-06 04:44:20.766  3334  3334 W Monkey  : data="com.freddietindlecowgill.frogsnlogs"
+11-06 04:44:20.830  1015  1284 W droid.bluetooth: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:20.830  1015  1284 W droid.bluetooth: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:21.321   826   826 I SafetyLabelChangedBroadcastReceiver: received broadcast packageName: com.freddietindlecowgill.frogsnlogs, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+11-06 04:44:21.612   825   856 V WindowManagerShell: Transition requested: android.os.BinderProxy@d93ee52 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity } baseActivity=ComponentInfo{com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} topActivity=ComponentInfo{com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} origActivity=null realActivity=ComponentInfo{com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} numActivities=1 lastActiveTime=40455 supportsMultiWindow=true resizeMode=2 isResizeable=true minWidth=400 minHeight=300 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@5a523} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{6ca2a20 com.unity3d.player.UnityPlayerActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-06 04:44:21.613   520  1793 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} with LAUNCH_SINGLE_TASK from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+11-06 04:44:21.645   520   548 I ActivityManager: Start proc 3457:com.freddietindlecowgill.frogsnlogs/u0a192 for next-top-activity {com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity}
+11-06 04:44:21.664  3334  3334 I AndroidRuntime: VM exiting with result code 0.
+11-06 04:44:21.879  3457  3457 I gill.frogsnlogs: Using CollectorTypeCC GC.
+11-06 04:44:21.880  3457  3457 W gill.frogsnlogs: Unexpected CPU variant for x86: x86_64.
+11-06 04:44:21.880  3457  3457 W gill.frogsnlogs: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+11-06 04:44:21.881  3457  3457 E gill.frogsnlogs: Not starting debugger since process cannot load the jdwp agent.
+11-06 04:44:22.164  3457  3457 V GraphicsEnvironment: ANGLE GameManagerService for com.freddietindlecowgill.frogsnlogs: false
+11-06 04:44:22.164  3457  3457 V GraphicsEnvironment: com.freddietindlecowgill.frogsnlogs is not listed in per-application setting
+11-06 04:44:22.183   520   537 V WindowManager: Sent Transition #8 createdAt=11-06 04:44:21.551 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity } baseActivity=ComponentInfo{com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} topActivity=ComponentInfo{com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} origActivity=null realActivity=ComponentInfo{com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity} numActivities=1 lastActiveTime=40455 supportsMultiWindow=true resizeMode=2 isResizeable=true minWidth=400 minHeight=300 defaultMinSize=220 token=WCT{RemoteToken{4a9d353 Task{902d9ea #8 type=standard A=10192:com.freddietindlecowgill.frogsnlogs}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{fe47490 com.unity3d.player.UnityPlayerActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-06 04:44:22.183   520   537 V WindowManager:     info={id=8 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{WCT{RemoteToken{4a9d353 Task{902d9ea #8 type=standard A=10192:com.freddietindlecowgill.frogsnlogs}}} m=OPEN f=NONE leash=Surface(name=Task=8)/@0x451da24 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0},{WCT{RemoteToken{729b189 Task{e2e19af #1 type=home}}} m=TO_BACK f=SHOW_WALLPAPER leash=Surface(name=Task=1)/@0x3331a41 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-06 04:44:22.328  3457  3457 V Unity   : Context Type: ActivityOrService
+11-06 04:44:22.355   520  2742 D CoreBackPreview: Window{a69d705 u0 com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e7e3514, mPriority=-1, mIsAnimationCallback=false}
+11-06 04:44:22.355   520  2742 D CoreBackPreview: Window{a69d705 u0 com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@160e1bd, mPriority=1, mIsAnimationCallback=false}
+11-06 04:44:22.491   520   537 I ActivityTaskManager: Displayed com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity for user 0: +1s103ms
+11-06 04:44:22.602   520  2183 W InputManager-JNI: Input channel object 'd2e9833 Splash Screen com.freddietindlecowgill.frogsnlogs (client)' was disposed without first being removed with the input manager!
+11-06 04:44:22.748  3457  3510 I Unity   : MemoryManager: Using 'Dynamic Heap' Allocator.
+11-06 04:44:22.748   520  1713 I ImeTracker: com.freddietindlecowgill.frogsnlogs:808b882d: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-06 04:44:22.748   520  1713 I ImeTracker: com.freddietindlecowgill.frogsnlogs:808b882d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-06 04:44:22.788  1510  1510 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1877 onStartInput(EditorInfo{inputType=0x0(NULL) imeOptions=0x0 privateImeOptions=null actionName=UNSPECIFIED actionLabel=null actionId=0 initialSelStart=-1 initialSelEnd=-1 initialCapsMode=0x0 hintText=null label=null packageName=com.freddietindlecowgill.frogsnlogs fieldId=0 fieldName=null extras=null}, false)
+11-06 04:44:23.496  3457  3510 I Unity   : SystemInfo CPU = x86-64 SSE3 SSE4.1 SSE4.2 AVX, Cores = 2, Memory = 2475mb
+11-06 04:44:23.497  3457  3510 I Unity   : ApplicationInfo 'com.freddietindlecowgill.frogsnlogs', Version '1.2.0', Min API Level '25', Target API Level '36'
+11-06 04:44:23.497  3457  3510 I Unity   : Built from '6000.3/respin/6000.3.28f1-21f78c3e21d1' branch, Version '6000.3.28f1 (8f082d2fe476)', Build type 'Release', Scripting Backend 'il2cpp', CPU 'x86_64', Stripping 'Enabled'
+11-06 04:44:23.497  3457  3510 I Unity   : Device Model 'Google sdk_gphone64_x86_64', OS 'Android OS 14 (API 34)'
+11-06 04:44:23.623  1040  1040 D CarrierSvcBindHelper: onPackageAdded: com.freddietindlecowgill.frogsnlogs
+11-06 04:44:23.641  1040  1353 D ImsResolver: maybeAddedImsService, packageName: com.freddietindlecowgill.frogsnlogs
+11-06 04:44:23.730  1670  2050 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:23.730  1670  2050 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:23.730  1670  2050 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:23.730  1670  2050 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:23.730  1670  2050 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:44:23.730  1670  2050 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:44:23.794  3457  3510 I Unity   : Company Name: Freddie Tindle-Cowgill
+11-06 04:44:23.794  3457  3510 I Unity   : Product Name: Frogs-N-Logs
+11-06 04:44:23.909  1040  1040 D CarrierSvcBindHelper: onPackageModified: com.freddietindlecowgill.frogsnlogs
+11-06 04:44:23.934  1573  1573 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.freddietindlecowgill.frogsnlogs], userId:[0], reason:[package is added.].
+11-06 04:44:24.289  1040  1353 D ImsResolver: maybeAddedImsService, packageName: com.freddietindlecowgill.frogsnlogs
+11-06 04:44:24.331  1573  1573 I AiAiEcho: AppFetcherImpl onPackageChanged com.freddietindlecowgill.frogsnlogs.
+11-06 04:44:24.332  1573  2845 I AiAiEcho: AppIndexer Package:[com.freddietindlecowgill.frogsnlogs] UserProfile:[0] Enabled:[true].
+11-06 04:44:24.332  1573  2845 I AiAiEcho: AppFetcherImplV2 updateApps package:[com.freddietindlecowgill.frogsnlogs], userId:[0], reason:[package is updated.].
+11-06 04:44:24.389  3457  3510 D gill.frogsnlogs: PlayerBase::PlayerBase()
+11-06 04:44:26.090   520   537 I ActivityTaskManager: Fully drawn com.freddietindlecowgill.frogsnlogs/com.unity3d.player.UnityPlayerActivity: +4s703ms
+11-06 04:44:27.073   520  1396 W system_server: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/android/permission/jarjar/com/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:27.073   520  1396 W system_server: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/android/permission/jarjar/com/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:28.979  3036  3288 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:28.979  3036  3288 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:28.995  3457  3510 I Unity   : [Characters] Frog model in place (scale 4.057)
+11-06 04:44:28.995  3457  3510 I Unity   : UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+11-06 04:44:28.995  3457  3510 I Unity   : CharacterVisual:Build()
+11-06 04:44:28.995  3457  3510 I Unity   : CharacterVisual:Attach(GameObject, String, String, String, Single, Single, Single)
+11-06 04:44:28.995  3457  3510 I Unity   : Stylizer:SwapCharacters()
+11-06 04:44:28.995  3457  3510 I Unity   : Stylizer:Awake()
+11-06 04:44:28.995  3457  3510 I Unity   : UnityEngine.GameObject:Internal_AddComponentWithType(Type)
+11-06 04:44:28.995  3457  3510 I Unity   : UnityEngine.GameObject:AddComponent()
+11-06 04:44:28.995  3457  3510 I Unity   : FrogsUI:EnsureForScene(Scene)
+11-06 04:44:28.995  3457  3510 I Unity   : 
+11-06 04:44:29.001  3457  3510 I Unity   : [Characters] Eagle model in place (scale 0.274)
+11-06 04:44:29.001  3457  3510 I Unity   : UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+11-06 04:44:29.001  3457  3510 I Unity   : CharacterVisual:Build()
+11-06 04:44:29.001  3457  3510 I Unity   : CharacterVisual:Attach(GameObject, String, String, String, Single, Single, Single)
+11-06 04:44:29.001  3457  3510 I Unity   : Stylizer:Awake()
+11-06 04:44:29.001  3457  3510 I Unity   : UnityEngine.GameObject:Internal_AddComponentWithType(Type)
+11-06 04:44:29.001  3457  3510 I Unity   : UnityEngine.GameObject:AddComponent()
+11-06 04:44:29.001  3457  3510 I Unity   : FrogsUI:EnsureForScene(Scene)
+11-06 04:44:29.001  3457  3510 I Unity   : 
+11-06 04:44:29.679  1443  3733 W libc    : Access denied finding property "ro.hardware.chipname"
+11-06 04:44:29.745  3457  3510 I Unity   : [Scenery] Swapped 35 rocks for cartoon rocks
+11-06 04:44:29.745  3457  3510 I Unity   : UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+11-06 04:44:29.745  3457  3510 I Unity   : SceneDressing:ReplaceOldRocks()
+11-06 04:44:29.745  3457  3510 I Unity   : SceneDressing:Start()
+11-06 04:44:29.745  3457  3510 I Unity   : 
+11-06 04:44:29.757  3457  3510 I Unity   : [Helper] Biscuit the dog is here to help
+11-06 04:44:29.757  3457  3510 I Unity   : UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+11-06 04:44:29.757  3457  3510 I Unity   : HelperBuddy:Setup(String, Transform)
+11-06 04:44:29.757  3457  3510 I Unity   : 
+11-06 04:44:31.106   394   394 W WVCdm   : [oemcrypto_adapter_dynamic.cpp(864):Initialize] Could not load oemcrypto from path liboemcrypto.so.  dlopen failed: library "liboemcrypto.so" not found
+11-06 04:44:31.743  1665  1665 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:31.743  1665  1665 W SnapshotHandler: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:31.743  1665  1665 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:31.743  1665  1665 W SnapshotHandler: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:31.743  1665  1665 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:31.743  1665  1665 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:32.046  1665  2452 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:32.046  1665  2452 W SnapshotHandler: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:32.046  1665  2452 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:32.046  1665  2452 W SnapshotHandler: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:32.046  1665  2452 W SnapshotHandler: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:32.046  1665  2452 W SnapshotHandler: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:32.145  3036  3940 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:32.145  3036  3940 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:32.741  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:32.741  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:32.909  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:33.112  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:33.174  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:33.715  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:33.732  1044  1060 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:34.040   520  2175 W FileUtils: 	at libcore.io.Linux.chmod(Native Method)
+11-06 04:44:34.040   520  2175 W FileUtils: 	at libcore.io.ForwardingOs.chmod(ForwardingOs.java:165)
+11-06 04:44:34.040   520  2175 W FileUtils: 	at libcore.io.BlockGuardOs.chmod(BlockGuardOs.java:83)
+11-06 04:44:34.345   826  4170 W ssioncontroller: Core platform API violation: Llibcore/io/Memory;->pokeByte(JB)V from Lcom/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:34.345   826  4170 W ssioncontroller: Core platform API violation: Llibcore/io/Memory;->peekByte(J)B from Lcom/google/protobuf/UnsafeUtil; using reflection
+11-06 04:44:35.157  1443  4047 I BlockstoreStorage: Clearing Blockstore Data for package com.freddietindlecowgill.frogsnlogs [CONTEXT service_id=258 ]
+11-06 04:44:37.003  1397  2863 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:37.003  1397  2863 I SemanticLocation: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:37.003  1397  2863 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:37.003  1397  2863 I SemanticLocation: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:37.003  1397  2863 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:37.003  1397  2863 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:37.376  1397  2863 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:37.376  1397  2863 I SemanticLocation: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:37.376  1397  2863 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:37.376  1397  2863 I SemanticLocation: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:37.376  1397  2863 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:37.376  1397  2863 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:39.165  1397  2863 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:39.165  1397  2863 I SemanticLocation: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:39.165  1397  2863 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:39.165  1397  2863 I SemanticLocation: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:39.165  1397  2863 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:39.165  1397  2863 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:46.606  1443  4523 W libc    : Access denied finding property "ro.hardware.chipname"
+11-06 04:44:46.979  3036  3940 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:46.984  3036  3940 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:48.813  1397  2423 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:48.813  1397  2423 I SemanticLocation: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:48.813  1397  2423 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:48.813  1397  2423 I SemanticLocation: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:48.813  1397  2423 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:48.813  1397  2423 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:48.894  1397  2423 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:48.894  1397  2423 I SemanticLocation: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:48.894  1397  2423 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:48.894  1397  2423 I SemanticLocation: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:48.894  1397  2423 I SemanticLocation: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:48.894  1397  2423 I SemanticLocation: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:48.944  1044  1061 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:49.126  1044  1061 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:49.156  1044  1061 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:44:49.338  3036  3940 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:49.338  3036  3940 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:49.758  3036  3288 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:49.758  3036  3288 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:49.832  3457  3510 I Unity   : [PlayArea] Walking map built for 98 m
+11-06 04:44:49.832  3457  3510 I Unity   : UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+11-06 04:44:49.832  3457  3510 I Unity   : PlayArea:BuildNavMesh()
+11-06 04:44:49.832  3457  3510 I Unity   : <Start>d__25:MoveNext()
+11-06 04:44:49.832  3457  3510 I Unity   : UnityEngine.SetupCoroutine:InvokeMoveNext(IEnumerator, IntPtr)
+11-06 04:44:49.832  3457  3510 I Unity   : 
+11-06 04:44:52.214  3036  3288 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:52.214  3036  3288 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:52.986  3036  3940 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:52.987  3036  3940 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:55.405   520  2742 E RecoverySnapshotStorage: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:55.405   520  2742 E RecoverySnapshotStorage: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:55.405   520  2742 E RecoverySnapshotStorage: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:55.405   520  2742 E RecoverySnapshotStorage: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:55.405   520  2742 E RecoverySnapshotStorage: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:55.863   520  1396 E RecoverySnapshotStorage: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:55.863   520  1396 E RecoverySnapshotStorage: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:55.863   520  1396 E RecoverySnapshotStorage: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:55.863   520  1396 E RecoverySnapshotStorage: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:55.863   520  1396 E RecoverySnapshotStorage: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:56.813  3036  3940 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:56.829  3036  3940 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:44:58.748   520   597 E RecoverySnapshotStorage: 	at libcore.io.IoBridge.open(IoBridge.java:574)
+11-06 04:44:58.748   520   597 E RecoverySnapshotStorage: 	at libcore.io.Linux.open(Native Method)
+11-06 04:44:58.748   520   597 E RecoverySnapshotStorage: 	at libcore.io.ForwardingOs.open(ForwardingOs.java:563)
+11-06 04:44:58.748   520   597 E RecoverySnapshotStorage: 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+11-06 04:44:58.748   520   597 E RecoverySnapshotStorage: 	at libcore.io.IoBridge.open(IoBridge.java:560)
+11-06 04:44:59.462  3036  3757 W libc    : Access denied finding property "persist.adb.tls_server.enable"
+11-06 04:44:59.471  3036  3757 W libc    : Access denied finding property "service.adb.tls.port"
+11-06 04:45:19.587  1044  1393 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.588  1044  1393 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.602  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.602  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.696  1044  1393 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.716  1044  1393 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.726  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.741  1044  1393 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.775  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:19.786  1044  1393 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:20.032  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:21.288  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:21.311  1044  4970 W libc    : Access denied finding property "ro.vendor.aware_available"
+11-06 04:45:28.237  1089  1089 I ContentCaptureHelper: Setting logging level to DEBUG
+11-06 04:45:31.314  1665  2281 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:45:31.314  1665  2281 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:45:31.314  1665  2281 D StrictMode: 	at libcore.io.BlockGuardOs.access(BlockGuardOs.java:74)
+11-06 04:45:31.314  1665  2281 D StrictMode: 	at libcore.io.ForwardingOs.access(ForwardingOs.java:128)
+11-06 04:45:34.929  1443  5380 W libc    : Access denied finding property "ro.hardware.chipname"
