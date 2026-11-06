@@ -62,10 +62,17 @@ Shader "Frogs/ToonWater"
                 half4 col = lerp(_DeepColor, _ShallowColor, pools);
                 // crisp cartoon ripple bands
                 float bands = sin((p.x + sin(p.y * 1.3 + t) * 0.6) * 3.0 + t * 2.0);
-                float ripple = smoothstep(0.975, 0.995, bands);
+                // Nov 2026: keep the ripple lines smooth on any screen size. fwidth = how much
+                // "bands" changes across one pixel; widen the edge by that much, and fade the
+                // lines out when they'd be thinner than a pixel (small phones, far away).
+                float fw = fwidth(bands);
+                float ripple = smoothstep(0.975 - fw, 0.995 + fw, bands) * saturate(1.2 - fw * 3.0);
                 // twinkling sparkles
                 float2 cell = floor(p * 3.0);
                 float sparkle = step(0.985, hash21(cell)) * (0.5 + 0.5 * sin(t * 6.0 + hash21(cell + 3.1) * 6.28));
+                // Sparkle cells smaller than ~2 pixels just flicker, so fade them out.
+                float cellPixels = 1.0 / max(length(fwidth(p * 3.0)), 1e-4);
+                sparkle *= saturate((cellPixels - 1.5) / 2.5);
                 half glint = saturate(ripple * 0.3 + sparkle * 0.7);
                 col.rgb = lerp(col.rgb, _RippleColor.rgb, glint);
                 col.a = saturate(col.a + glint * 0.3);

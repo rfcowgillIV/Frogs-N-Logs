@@ -75,3 +75,27 @@ on top of the original level/start/fly/Game Over checks.
 - **Daily challenge** on the title screen (a new goal every day, +40 flies).
 - New achievements: Combo king, Best buddy, Daily hopper.
 - Every menu tab now scrolls, so the bigger Shop fits on small screens.
+
+## Round 5 (Nov 2026): six levels, the Great Owl, tongue, dodge, stars
+
+**Three new levels** after Night (each with its own music, lighting, ground and hazards):
+- **Lily Pad Lake** (dawn): the lake floods its banks. Wading slows you down; lily pads are dry
+  ground. A pike lunges out of the water (a blue ring warns you). Dragonflies are worth 3.
+- **Autumn Woods** (golden afternoon): orange and red trees, leaf piles to hop through (most hide
+  a bonus fly, +2), giant mushrooms that bounce you forward, and a **fox** hunting on the ground
+  while the bird hunts from above. Watch out for **bees** (a sting costs 2 flies).
+- **Winter Freeze** (snowy evening): snow, frozen ponds (slippery!), thin ice that cracks if you
+  stand still on it, fireflies, and the bird becomes a snowy owl. Reach the goal and **the Great
+  Owl** arrives: survive its dives for 30 seconds (hop out of the red rings) and the credits roll.
+
+Ground textures are 2048 px CC0 scans from ambientCG (1024 px on the web and phones).
+
+**New moves:** tongue flick (E / gamepad B / TONGUE button) grabs the nearest fly up to 5 m away;
+dodge hop (Shift / gamepad A / DODGE button) leaps 4 m and you can't be caught mid-leap.
+
+**More to play for:** level select on the title screen (start at any level you've reached) with
+up to 3 stars per level (finish, beat the par time, get an x5 combo); fireflies, dragonflies and
+bees; clumps of reeds to hide in (keep still and the bird and fox lose you for up to 6 s); and
+the odd rainstorm (more flies, but a restless bird). Helpers are bigger, and on phones held
+upright the title screen stacks its boxes so everything is larger. New achievements: Lily
+hopper, Snow frog, Star frog, Long tongue; "Owl dodger" replaces Night survivor.

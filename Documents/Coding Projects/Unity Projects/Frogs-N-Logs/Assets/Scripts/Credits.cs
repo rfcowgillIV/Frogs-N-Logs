@@ -1,5 +1,5 @@
 // Credits (added Nov 2026): everyone whose work is in Frogs-N-Logs.
-// Shown from the title screen (Credits) and in the credits roll when you survive the Night.
+// Shown from the title screen (Credits) and in the credits roll after beating the Great Owl.
 // Keep this in sync with CREDITS.md at the top of the repository.
 public static class Credits
 {
@@ -27,10 +27,14 @@ public static class Credits
         "quaternius.com · CC0",
         "",
         "<color=#FFD152>MUSIC</color>",
-        "\"Fluffing a Duck\", \"Carefree\", \"Sneaky Snitch\", \"Investigations\"",
+        "\"Fluffing a Duck\", \"Carefree\", \"Sneaky Snitch\", \"Investigations\",",
+        "\"Easy Lemon\", \"Thatched Villagers\", \"Frost Waltz\", \"Volatile Reaction\"",
         "Kevin MacLeod (incompetech.com)",
         "Licensed under Creative Commons: By Attribution 4.0 License",
         "http://creativecommons.org/licenses/by/4.0/",
+        "",
+        "<color=#FFD152>GROUND TEXTURES (LAKE, AUTUMN, SNOW, ICE)</color>",
+        "ambientCG (ambientcg.com) · CC0",
         "",
         "<color=#FFD152>SOUND EFFECTS</color>",
         "\"Ribbit Frog Sounds\" & \"Frog Croaks\" by EZduzziteh · CC0",

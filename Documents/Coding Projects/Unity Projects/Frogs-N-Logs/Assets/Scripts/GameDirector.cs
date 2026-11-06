@@ -112,6 +112,8 @@ public class GameDirector : MonoBehaviour
     {
         if (level >= 2) Achievements.Unlock("swamp");
         if (level >= 3) Achievements.Unlock("night");
+        if (level >= 4) Achievements.Unlock("lake");
+        if (level >= 6) Achievements.Unlock("winter");
     }
 
     private void OnAchievement(string name)
@@ -128,7 +130,8 @@ public class GameDirector : MonoBehaviour
 
     void Update()
     {
-        PlayerMovement.SpeedMultiplier = Shop.SpeedMultiplier * (FrogEffects.Boosted ? FrogEffects.BoostMultiplier : 1f);
+        PlayerMovement.SpeedMultiplier = Shop.SpeedMultiplier * (FrogEffects.Boosted ? FrogEffects.BoostMultiplier : 1f)
+            * Biome.SpeedFactor * (FlyKind.StungUntil > Time.time ? 0.6f : 1f);
         UpdateBubble();
 
         GameState game = GameState.Current;
@@ -174,6 +177,7 @@ public class GameDirector : MonoBehaviour
         combo = Time.time - lastFlyTime <= ComboWindow ? combo + 1 : 1;
         lastFlyTime = Time.time;
         DailyChallenge.BestComboThisRound = Mathf.Max(DailyChallenge.BestComboThisRound, combo);
+        LevelProgress.ComboThisLevel = Mathf.Max(LevelProgress.ComboThisLevel, combo);
         int bonus = combo == 3 ? 1 : combo == 5 ? 2 : (combo >= 8 && (combo - 8) % 4 == 0) ? 3 : 0;
         if (combo >= 8) Achievements.Unlock("combo");
         if (bonus <= 0) return;
@@ -295,6 +299,11 @@ public class GameDirector : MonoBehaviour
             float d = Vector3.Distance(snake.transform.position, frog.position);
             if (d < best) { best = d; target = snake.transform; }
         }
+        if (GroundHunter.Active != null)
+        {
+            float d = Vector3.Distance(GroundHunter.Active.transform.position, frog.position);
+            if (d < best) { best = d; target = GroundHunter.Active.transform; }
+        }
         if (target == null)
         {
             FrogEffects.Say("Nothing in laser range");
@@ -307,6 +316,10 @@ public class GameDirector : MonoBehaviour
         {
             BirdMovement.Stun(4f);
             Achievements.CountStun();
+        }
+        else if (target.GetComponent<GroundHunter>() != null)
+        {
+            target.GetComponent<GroundHunter>().Stun(4f);
         }
         else
         {
@@ -350,6 +363,7 @@ public class GameDirector : MonoBehaviour
 
         Shop.Item skin = Shop.Find(Shop.EquippedSkin);
         Color tint = skin != null ? skin.tint : Color.white;
+        bool golden = skin != null && skin.id == "skin.gold";
         var block = new MaterialPropertyBlock();
         foreach (Renderer r in frog.GetComponentsInChildren<Renderer>(true))
         {
@@ -358,8 +372,12 @@ public class GameDirector : MonoBehaviour
             if (tint == Color.white) block.Clear();
             else
             {
-                block.SetColor("_Color", tint);
-                block.SetColor("_BaseColor", tint);
+                // Nov 2026: the cartoon frog's texture is dark green, so multiplying it by a
+                // colour couldn't make it pink or gold. Recolour it instead (FrogsToon _Recolor).
+                block.SetColor("_Color", tint);                                   // 2017 shader
+                block.SetColor("_Recolor", new Color(tint.r, tint.g, tint.b, 1f)); // cartoon frog
+                block.SetFloat("_Shine", golden ? 1f : 0.2f);                      // gold shines
+                block.SetFloat("_RimStrength", golden ? 0.6f : 0.25f);
             }
             r.SetPropertyBlock(block);
         }

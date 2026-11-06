@@ -39,6 +39,7 @@ public class FlySpawner : MonoBehaviour {
 			int n = DifficultyRules.FlyMinimum (GameSettings.Difficulty, totalyFlyMinimum);
 			// A bigger pond gets a few more flies; the Fly frenzy cheat doubles them.
 			n += Mathf.RoundToInt ((PlayArea.HalfSize - 30f) / 3f);
+			n = Mathf.RoundToInt (n * Weather.FlyFactor); // rainstorms bring out more flies
 			return Cheats.FlyFrenzy ? n * 2 : n;
 		}
 	}
@@ -95,6 +96,8 @@ public class FlySpawner : MonoBehaviour {
 			AudioManager.Register (fly);
 		}
 		ActiveFlies.Add (fly);
+		// Nov 2026: dragonflies, fireflies and bees in the later levels.
+		FlyKind.Assign (fly);
 	}
 
 	// Called by FlyPickUp when a fly is eaten.

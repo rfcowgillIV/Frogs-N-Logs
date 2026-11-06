@@ -106,6 +106,7 @@ public class PlayArea : MonoBehaviour
             IgnoreMoving<SnakeHazard>();
             IgnoreMoving<DriftingLog>();
             IgnoreMoving<HelperBuddy>();
+            IgnoreMoving<HidingSpot>();
 
             // Swap the 2017 baked map for the new, bigger one.
             NavMesh.RemoveAllNavMeshData();

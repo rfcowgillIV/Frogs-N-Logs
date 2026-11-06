@@ -120,6 +120,9 @@ public class MiniMap : MonoBehaviour
         snapshotAt = Time.time + 2.8f;
     }
 
+    // Retake the picture (the world changed, e.g. snow or a flooded lake).
+    public void Refresh() { snapshotWanted = true; snapshotAt = Time.time + 0.2f; }
+
     private void WantSnapshot()
     {
         snapshotWanted = true;
@@ -154,7 +157,13 @@ public class MiniMap : MonoBehaviour
         if (GameSettings.MapFlies)
         {
             foreach (GameObject fly in FlySpawner.ActiveFlies)
-                if (fly != null && fly.activeInHierarchy) Dot(fly.transform.position, FlyColor, 5f, false, 0f);
+                if (fly != null && fly.activeInHierarchy)
+                {
+                    FlyKind kind = fly.GetComponent<FlyKind>();
+                    FlyKind.Type t = kind != null ? kind.Kind : FlyKind.Type.Fly;
+                    Color c = t == FlyKind.Type.Dragonfly ? new Color(0.3f, 1f, 0.95f) : t == FlyKind.Type.Bee ? new Color(1f, 0.45f, 0.1f) : FlyColor;
+                    Dot(fly.transform.position, c, t == FlyKind.Type.Fly ? 5f : 7f, false, 0f);
+                }
         }
         if (GameSettings.MapPowerUps)
         {
@@ -177,6 +186,9 @@ public class MiniMap : MonoBehaviour
         {
             foreach (SnakeHazard snake in FindObjectsByType<SnakeHazard>(FindObjectsSortMode.None))
                 Dot(snake.transform.position, SnakeColor, 9f, false, 0f);
+            if (GroundHunter.Active != null) Dot(GroundHunter.Active.transform.position, SnakeColor, 11f, false, 0f);
+            foreach (StrikeZone zone in FindObjectsByType<StrikeZone>(FindObjectsSortMode.None))
+                if (!zone.Struck) Dot(zone.transform.position, new Color(1f, 1f, 1f, 0.8f), 14f, false, 0f);
             BirdMovement bird = FindFirstObjectByType<BirdMovement>();
             if (bird != null) Dot(bird.transform.position, BirdIsDizzy() ? new Color(1f, 0.7f, 0.7f) : BirdColor, 12f, false, 0f);
         }

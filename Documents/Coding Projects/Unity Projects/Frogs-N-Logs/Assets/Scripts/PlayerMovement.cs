@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -45,6 +45,61 @@ public class PlayerMovement : MonoBehaviour {
 	public float CurrentSpeed { get; private set; }
 	private Vector3 velocity;
 
+	// ---- Nov 2026: dodge hop and slippery ice ----
+	// Dodge hop (Shift / gamepad A / DODGE button): a quick 4 m leap. You can't be caught
+	// while leaping. Recharges in a couple of seconds.
+	public const float DodgeSpeed = 18f;
+	public const float DodgeSeconds = 0.22f;
+	public const float DodgeCooldown = 2.5f;
+	public static float DodgeReadyAt;
+	private static float dodgeUntil;
+	private static Vector3 dodgeDirection;
+	public static bool Dodging { get { return Time.time < dodgeUntil; } }
+
+	// 1 = normal grip. Lower = slippery (Winter ice): the frog takes longer to speed up,
+	// turn and stop, so it slides.
+	public static float Grip = 1f;
+
+	public static PlayerMovement Instance { get; private set; }
+
+	void Awake () {
+		Instance = this;
+		DodgeReadyAt = 0f;
+		dodgeUntil = 0f;
+		Grip = 1f;
+		StuckUntil = 0f;
+	}
+
+	// Giant mushrooms (Autumn Woods) launch the frog forward. Not limited by the dodge recharge.
+	public void Bounce (float seconds = 0.35f) {
+		Vector3 dir = movement.sqrMagnitude > 0.01f ? movement.normalized : transform.forward;
+		dir.y = 0f;
+		dodgeDirection = dir.sqrMagnitude > 0.01f ? dir.normalized : Vector3.forward;
+		dodgeUntil = Time.time + seconds;
+		FrogEffects.InvulnerableUntil = Mathf.Max (FrogEffects.InvulnerableUntil, Time.time + seconds);
+	}
+
+	// Thin ice (Winter Freeze): stuck for a moment after falling through.
+	public static float StuckUntil;
+	public static bool Stuck { get { return Time.time < StuckUntil; } }
+
+	// Leap in the direction you're steering (or the way you're facing). Returns true if it
+	// happened (false while recharging).
+	public bool Dodge () {
+		if (!enabled || Time.time < DodgeReadyAt) return false;
+		Vector3 dir = movement.sqrMagnitude > 0.01f ? movement.normalized : transform.forward;
+		dir.y = 0f;
+		if (dir.sqrMagnitude < 0.01f) dir = Vector3.forward;
+		dodgeDirection = dir.normalized;
+		dodgeUntil = Time.time + DodgeSeconds;
+		DodgeReadyAt = Time.time + DodgeCooldown;
+		// Can't be caught mid-leap (and for a moment after landing).
+		FrogEffects.InvulnerableUntil = Mathf.Max (FrogEffects.InvulnerableUntil, Time.time + DodgeSeconds + 0.15f);
+		velocity = dodgeDirection * hopSpeed * SpeedMultiplier;
+		AudioDirector.Play ("Dodge", 0.7f);
+		return true;
+	}
+
 	void Start () {
 		//Gather the components from the Player GameObject
 		playerAnimator = GetComponent<Animator> ();
@@ -52,6 +107,11 @@ public class PlayerMovement : MonoBehaviour {
 		// Nov 2026: physics runs 50 times a second; interpolate so the frog glides smoothly
 		// on 120 Hz+ screens instead of stepping.
 		if (playerRigidbody != null) playerRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+	}
+
+	void OnEnable () {
+		// The Start / A press that began the round shouldn't also dodge.
+		DodgeReadyAt = Mathf.Max (DodgeReadyAt, Time.time + 0.3f);
 	}
 
 	void OnDisable () {
@@ -85,9 +145,18 @@ public class PlayerMovement : MonoBehaviour {
 			}
 		}
 
+		// Stuck in thin ice: can't move for a moment.
+		if (Stuck) {
+			movement = Vector3.zero;
+		}
+
 		// Diagonals shouldn't be faster than straight lines.
 		if (movement.sqrMagnitude > 1f) {
 			movement.Normalize ();
+		}
+
+		if (KeyBindings.DodgePressed ()) {
+			Dodge ();
 		}
 	}
 
@@ -108,8 +177,10 @@ public class PlayerMovement : MonoBehaviour {
 			// forces: its body sits slightly in the ground, and ground friction would otherwise
 			// hold it in place.
 			Vector3 target = movement * hopSpeed * SpeedMultiplier;
-			velocity = Vector3.MoveTowards (velocity, target, acceleration * Time.fixedDeltaTime);
-			if (velocity != Vector3.zero) {
+			velocity = Vector3.MoveTowards (velocity, target, acceleration * Mathf.Clamp (Grip, 0.05f, 1f) * Time.fixedDeltaTime);
+			if (Dodging) {
+				playerRigidbody.MovePosition (playerRigidbody.position + dodgeDirection * DodgeSpeed * Time.fixedDeltaTime);
+			} else if (velocity != Vector3.zero) {
 				playerRigidbody.MovePosition (playerRigidbody.position + velocity * Time.fixedDeltaTime);
 			}
 			// No leftover sliding from bumps.

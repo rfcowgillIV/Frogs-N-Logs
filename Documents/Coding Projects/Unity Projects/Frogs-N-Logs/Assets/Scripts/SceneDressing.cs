@@ -69,6 +69,11 @@ public class SceneDressing : MonoBehaviour
         // The Night ring (opens at level 3): bare trees, ferns and big mushrooms.
         for (int i = 0; i < 14; i++) Solid(Place(root, Pick(NightTrees), InBand(swamp + 2f, outer - 2f), Range(0.8f, 1.15f), false));
         for (int i = 0; i < 40; i++) Place(root, Pick(NightPlants), InBand(swamp + 0.5f, outer - 0.5f), Range(0.6f, 1f), i % 2 == 1);
+
+        // Nov 2026: clumps of tall reeds to hide in (HidingSpot.cs).
+        for (int i = 0; i < 5; i++) HidingSpot.Create(Grounded(InBand(9f, pond - 4f)), root);
+        for (int i = 0; i < 3; i++) HidingSpot.Create(Grounded(InBand(pond + 2f, swamp - 3f)), root);
+        for (int i = 0; i < 3; i++) HidingSpot.Create(Grounded(InBand(swamp + 2f, outer - 3f)), root);
         // Bushes, flowers and rocks along the inside of the walls.
         for (int i = 0; i < 36; i++)
         {
@@ -104,6 +109,12 @@ public class SceneDressing : MonoBehaviour
     }
 
     private float Range(float a, float b) { return a + (float)random.NextDouble() * (b - a); }
+
+    private static Vector3 Grounded(Vector3 p)
+    {
+        p.y = PowerUpSpawner.GroundHeight(p);
+        return p;
+    }
 
     // A random spot in the square ring between "inner" and "outer" metres from the middle.
     private Vector3 InBand(float inner, float outer)
@@ -151,6 +162,13 @@ public class SceneDressing : MonoBehaviour
     }
 
     // Cartoon materials with the kit's textures (leaves get cut-out edges and two sides).
+    // Nov 2026: the leaf and grass materials, for Biome.cs (autumn colours, snow).
+    public static readonly HashSet<Material> Leaves = new HashSet<Material>();
+    public static readonly HashSet<Material> Plants = new HashSet<Material>();
+
+    // For plants placed by other scripts (hiding spots): same cartoon look as the scenery.
+    public static void DressPlant(Renderer r) { Dress(r); }
+
     private static void Dress(Renderer r)
     {
         Material[] mats = r.sharedMaterials;
@@ -171,6 +189,9 @@ public class SceneDressing : MonoBehaviour
                 continue;
             }
             mats[i] = Stylizer.Toon(tex, Color.white, leafy ? 0.45f : 0f, leafy, leafy ? 0.05f : 0.15f);
+            // Remember leaves and grass so later levels can turn them autumn-orange or snowy.
+            if (lower.Contains("lea")) Leaves.Add(mats[i]);
+            else if (leafy) Plants.Add(mats[i]);
         }
         r.sharedMaterials = mats;
         r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
