@@ -1121,9 +1121,11 @@ namespace FrogsNLogs.Tests
             yield return new WaitForSeconds(3f);
             Assert.IsTrue(frog.activeInHierarchy, "Super frog can't be caught");
 
+            // (Super frog's giant magnet may already have eaten its way to the next level.)
             object levels = GetStaticProp("LevelManager", "Instance");
+            int levelBefore = (int)levels.GetType().GetProperty("Level").GetValue(levels);
             Assert.IsTrue((bool)cheats.GetMethod("SkipLevel").Invoke(null, null), "Skip level");
-            Assert.AreEqual(2, (int)levels.GetType().GetProperty("Level").GetValue(levels));
+            Assert.AreEqual(levelBefore + 1, (int)levels.GetType().GetProperty("Level").GetValue(levels), "Skip level goes up one");
             Assert.IsTrue((bool)cheats.GetProperty("AffectsScore").GetValue(null), "Best scores pause while Super frog is on");
 
             cheats.GetProperty("Enabled").SetValue(null, false);
