@@ -15,7 +15,7 @@ using UnityEngine.UI;
 //   Game over     - your score, your best for this difficulty, and "New best!"
 //
 // Menus so good they'll make you hop-timistic.
-public class FrogsUI : MonoBehaviour
+public partial class FrogsUI : MonoBehaviour
 {
     public static FrogsUI Instance { get; private set; }
 
@@ -100,6 +100,7 @@ public class FrogsUI : MonoBehaviour
         go.AddComponent<Weather>();       // the odd rainstorm
         go.AddComponent<BossOwl>();       // the Great Owl finale
         go.AddComponent<FrogTongue>();    // tongue flick
+        go.AddComponent<ClockPilot>();    // clock mode's autopilot
         go.AddComponent<GameDirector>();
         go.AddComponent<LevelManager>();
         go.AddComponent<HazardSpawner>();
@@ -110,6 +111,9 @@ public class FrogsUI : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        // A fresh level never starts as a clock by accident (Start() turns it on if asked).
+        ClockMode.Active = false;
+        AudioListener.volume = 1f;
         GameSettings.Changed += RefreshAll;
         ResponsiveCanvas.OrientationChanged += RefreshAll;
         Shop.Changed += RefreshAll;
@@ -155,6 +159,7 @@ public class FrogsUI : MonoBehaviour
         BuildMenu();
         BuildGameOver();
         BuildCredits();
+        BuildClock();
         RefreshAll();
 
         if (startOnNextLoad)
@@ -166,6 +171,8 @@ public class FrogsUI : MonoBehaviour
         else
         {
             ShowTitle(true);
+            // "Open as clock": a spare screen goes straight into clock mode.
+            if (GameSettings.ClockAtStart && !ClockMode.ExitedThisSession) StartCoroutine(EnterClockSoon());
         }
     }
 
@@ -230,6 +237,12 @@ public class FrogsUI : MonoBehaviour
             return;
         }
 
+        if (ClockShowing)
+        {
+            UpdateClock();
+            return;
+        }
+
         if (KeyBindings.PausePressed() && !CreditsShowing)
         {
             if (menuPanel.activeSelf) CloseMenu();
@@ -259,7 +272,7 @@ public class FrogsUI : MonoBehaviour
 #if UNITY_EDITOR
         return; // (the automated tests run without window focus)
 #else
-        if (!hasFocus && GameState.Current != null && GameState.Current.IsPlaying && !paused && menuPanel != null)
+        if (!hasFocus && !ClockMode.Active && GameState.Current != null && GameState.Current.IsPlaying && !paused && menuPanel != null)
         {
             OpenMenu(true);
         }
@@ -271,7 +284,7 @@ public class FrogsUI : MonoBehaviour
     private void OnRoundStarted()
     {
         ShowTitle(false);
-        hud.SetActive(true);
+        hud.SetActive(!ClockMode.Active);
         gameOverPanel.SetActive(false);
     }
 
@@ -382,11 +395,13 @@ public class FrogsUI : MonoBehaviour
         Button play = MakeButton(buttons, "PLAY", 34, () =>
         {
             if (GameState.Current != null) GameState.Current.RequestStart();
-        }, 260f, 76f);
+        }, 230f, 76f);
         play.GetComponent<Image>().color = Accent;
         play.GetComponentInChildren<Text>().color = Ink;
-        MakeButton(buttons, "Settings", 24, () => OpenMenu(false), 180f, 76f);
-        MakeButton(buttons, "Credits", 24, () => ShowCredits(false), 160f, 76f);
+        MakeButton(buttons, "Settings", 24, () => OpenMenu(false), 160f, 76f);
+        MakeButton(buttons, "Credits", 24, () => ShowCredits(false), 140f, 76f);
+        // Nov 2026: the frog plays by itself under a big clock (FrogsUIClock.cs).
+        MakeButton(buttons, "Clock", 24, EnterClock, 130f, 76f);
     }
 
     private readonly List<RectTransform> portraitRows = new List<RectTransform>();
@@ -583,7 +598,7 @@ public class FrogsUI : MonoBehaviour
 
     public void Toast(string message)
     {
-        if (toastText == null) return;
+        if (toastText == null || ClockMode.Active) return;
         toastText.text = message;
         toastText.color = Gold;
         toastText.gameObject.SetActive(true);

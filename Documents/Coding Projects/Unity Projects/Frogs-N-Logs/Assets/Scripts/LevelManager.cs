@@ -96,7 +96,7 @@ public class LevelManager : MonoBehaviour
         {
             case 2: return new Color(0.9f, 1f, 0.82f);
             case 3: return new Color(0.72f, 0.8f, 1f);
-            case 4: return new Color(1f, 0.93f, 0.9f);     // rosy dawn
+            case 4: return new Color(0.95f, 0.98f, 1.04f); // fresh, clear morning
             case 5: return new Color(1.05f, 0.93f, 0.78f); // golden afternoon
             case 6: return new Color(0.86f, 0.93f, 1.05f); // cold blue evening
             default: return Color.white;
@@ -132,6 +132,12 @@ public class LevelManager : MonoBehaviour
     {
         LevelStartScore = ScoreCounter.score;
         LevelStartTime = Time.time;
+        if (ClockMode.Active)
+        {
+            // Clock mode: the world that suits the time of day and the season.
+            GoToLevel(ClockMode.LevelFor(ClockMode.Now));
+            return;
+        }
         int start = LevelProgress.StartLevel;
         if (start > 1 && Level == 1)
         {
@@ -177,6 +183,13 @@ public class LevelManager : MonoBehaviour
         if (game == null || !game.IsPlaying) return;
 
         int score = ScoreCounter.score;
+        if (ClockMode.Active)
+        {
+            // Clock mode: no goals or Great Owl (ClockPilot.cs follows the real time instead),
+            // and a calmer bird so the frog can enjoy itself.
+            BirdMovement.SpeedMultiplier = 0.7f * Weather.BirdFactor;
+            return;
+        }
         int goal = NextGoal;
         if (goal >= 0 && score >= goal)
         {
@@ -220,7 +233,7 @@ public class LevelManager : MonoBehaviour
         Level = level;
         LevelStartScore = ScoreCounter.score;
         LevelStartTime = Time.time;
-        LevelProgress.Reached(level);
+        if (!ClockMode.Active) LevelProgress.Reached(level); // the clock doesn't unlock levels
 
         from = Capture();
         to = LookFor(level);
@@ -262,14 +275,14 @@ public class LevelManager : MonoBehaviour
         }
         else if (level == 4)
         {
-            // Dawn over the lake: low pink-orange sun and a light morning mist.
+            // Bright morning on the lake: warm sun, clear blue air (only the faintest haze far off).
             l.fog = true;
             l.fogMode = FogMode.Exponential;
-            l.fogColor = new Color(0.92f, 0.82f, 0.8f);
-            l.fogDensity = 0.006f;
-            l.ambient = Color.Lerp(day.ambient, new Color(0.75f, 0.62f, 0.7f), 0.5f);
+            l.fogColor = new Color(0.72f, 0.84f, 0.96f);
+            l.fogDensity = 0.0025f;
+            l.ambient = Color.Lerp(day.ambient, new Color(0.62f, 0.72f, 0.88f), 0.4f);
             l.ambientIntensity = day.ambientIntensity * 0.9f;
-            l.sunColor = new Color(1f, 0.72f, 0.55f);
+            l.sunColor = new Color(1f, 0.93f, 0.8f);
             l.sunIntensity = day.sunIntensity * 0.85f;
         }
         else if (level == 5)

@@ -139,7 +139,7 @@ public class MiniMap : MonoBehaviour
 
     void LateUpdate()
     {
-        bool show = GameSettings.MiniMap && GameState.Current != null && GameState.Current.IsPlaying;
+        bool show = GameSettings.MiniMap && GameState.Current != null && GameState.Current.IsPlaying && !ClockMode.Active;
         if (frame.GetChild(0).gameObject.activeSelf != show)
         {
             for (int i = 0; i < frame.childCount; i++) frame.GetChild(i).gameObject.SetActive(show);

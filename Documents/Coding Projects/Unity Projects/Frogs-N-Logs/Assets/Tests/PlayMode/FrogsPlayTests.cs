@@ -1326,5 +1326,104 @@ namespace FrogsNLogs.Tests
             Assert.Greater((float)GetStaticProp("Weather", "FlyFactor"), 1f, "Rain brings more flies");
             Assert.Greater((float)GetStaticProp("Weather", "BirdFactor"), 1f, "...and a restless bird");
         }
+            // ---------- Nov 2026 round 6: clock mode ----------
+
+        [UnityTest, Timeout(120000)]
+        public IEnumerator T31_ClockModePlaysItselfAndShowsTheTime()
+        {
+            yield return LoadLevel();
+            Type clock = GameType("ClockMode");
+            FieldInfo testNow = clock.GetField("TestNow", BindingFlags.Public | BindingFlags.Static);
+            FieldInfo active = clock.GetField("Active", BindingFlags.Public | BindingFlags.Static);
+            try
+            {
+                // A November afternoon: Autumn Woods.
+                testNow.SetValue(null, (DateTime?)new DateTime(2026, 11, 11, 14, 5, 0));
+                int wallet = (int)GetStaticProp("Shop", "Wallet");
+                FindButton("Clock").onClick.Invoke();
+                yield return null;
+                yield return null;
+                Assert.IsTrue((bool)active.GetValue(null), "Clock mode should be on");
+                Assert.IsTrue((bool)FindOne("GameState").GetType().GetProperty("IsPlaying").GetValue(FindOne("GameState")), "The frog should be up and playing");
+                string text = AllVisibleText();
+                StringAssert.Contains("2:05", text, "The time should show");
+                StringAssert.Contains("PM", text, "12-hour clock by default");
+                StringAssert.Contains("Wednesday, November 11", text, "The date should show");
+                Assert.IsFalse(Object.FindObjectsByType<Button>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+                    .Any(b => b.GetComponentInChildren<Text>() != null && b.GetComponentInChildren<Text>().text == "II"), "No game buttons over the clock");
+                Assert.IsFalse(Object.FindObjectsByType(GameType("ScoreCounter"), FindObjectsSortMode.None).Cast<Component>()
+                    .Any(c => c.GetComponent<Graphic>() != null && c.GetComponent<Graphic>().enabled), "No score over the clock");
+
+                yield return new WaitForSeconds(3f);
+                object levels = GetStaticProp("LevelManager", "Instance");
+                Assert.AreEqual(5, (int)levels.GetType().GetProperty("Level").GetValue(levels), "November afternoons are Autumn Woods");
+                Assert.AreEqual(5, (int)GameType("Biome").GetProperty("Current").GetValue(null), "...with the autumn world in");
+
+                // The frog plays by itself.
+                GameObject frog = GameObject.FindWithTag("Player");
+                Vector3 start = frog.transform.position;
+                yield return new WaitForSeconds(4f);
+                Assert.Greater(Flat(frog.transform.position - start).magnitude, 1f, "The frog should hop around on its own");
+
+                // ...and can't lose.
+                Component health = frog.GetComponent(GameType("PlayerHealth"));
+                health.GetType().GetMethod("Catch").Invoke(health, new object[] { null });
+                yield return null;
+                Assert.IsTrue((bool)GetField(health, "alive"), "The clock never ends");
+
+                // Nothing in clock mode counts.
+                SetStaticField("ScoreCounter", "score", (int)GetStatic("ScoreCounter", "score") + 5);
+                yield return null;
+                yield return null;
+                Assert.AreEqual(wallet, (int)GetStaticProp("Shop", "Wallet"), "Clock mode earns no flies");
+                Assert.AreEqual(1, (int)GetStaticProp("LevelProgress", "Highest"), "Clock mode unlocks no levels");
+                yield return Screenshot("24-clock-mode");
+                yield return PortraitScreenshot("25-clock-portrait");
+                yield return null;
+                yield return null;
+
+                // Late evening: the pond turns to Night, and the 24-hour setting works.
+                testNow.SetValue(null, (DateTime?)new DateTime(2026, 11, 11, 22, 30, 0));
+                object pilot = GetStaticProp("ClockPilot", "Instance");
+                pilot.GetType().GetMethod("FollowTheRealTime").Invoke(pilot, new object[] { true });
+                SetStaticProp("GameSettings", "Clock24h", true);
+                yield return new WaitForSeconds(3f);
+                Assert.AreEqual(3, (int)levels.GetType().GetProperty("Level").GetValue(levels), "After dark it's Night");
+                StringAssert.Contains("22:30", AllVisibleText(), "24-hour time");
+                yield return Screenshot("26-clock-night");
+
+                // Tap for the options, then leave.
+                GameObject.Find("Clock Tap Area").GetComponent<Button>().onClick.Invoke();
+                yield return null;
+                FindButton("Size: Medium").onClick.Invoke();
+                yield return null;
+                Assert.AreEqual(2, (int)GetStaticProp("GameSettings", "ClockSize"), "Size cycles to Large");
+                FindButton("Exit clock").onClick.Invoke();
+                for (int i = 0; i < 20; i++) yield return null;
+                Assert.IsFalse((bool)active.GetValue(null), "Clock mode should be off");
+                Assert.IsNotNull(FindButton("PLAY"), "Back at the title screen");
+                Assert.AreEqual(1f, AudioListener.volume, 0.01f, "Sound back on");
+            }
+            finally
+            {
+                testNow.SetValue(null, null);
+                active.SetValue(null, false);
+                AudioListener.volume = 1f;
+            }
+        }
+
+        [Test]
+        public void T32_ClockModeFollowsTheTimeOfDayAndSeason()
+        {
+            MethodInfo levelFor = GameType("ClockMode").GetMethod("LevelFor");
+            Func<int, int, int> at = (month, hour) => (int)levelFor.Invoke(null, new object[] { new DateTime(2026, month, 10, hour, 0, 0) });
+            Assert.AreEqual(3, at(7, 23), "Night after dark");
+            Assert.AreEqual(3, at(1, 4), "Night before dawn");
+            Assert.AreEqual(2, at(7, 19), "The Swamp at dusk");
+            Assert.AreEqual(6, at(1, 12), "Winter days are snowy");
+            Assert.AreEqual(4, at(4, 12), "Spring days are on the lake");
+            Assert.AreEqual(1, at(7, 12), "Summer days at the pond");
+            Assert.AreEqual(5, at(10, 12), "Autumn days in the woods");
+        }
     }
 }
