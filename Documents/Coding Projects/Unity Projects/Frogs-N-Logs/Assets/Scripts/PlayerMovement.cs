@@ -39,6 +39,9 @@ public class PlayerMovement : MonoBehaviour {
 	// For the automated play tests: pretend a direction is being held.
 	public static Vector3? TestMoveOverride;
 
+	// Clock mode's autopilot steers here (ClockPilot.cs).
+	public static Vector3 AutoMove;
+
 	// For the automated play tests: the old 2017 root-motion movement, to compare speeds.
 	public static bool ClassicRootMotion;
 
@@ -134,6 +137,9 @@ public class PlayerMovement : MonoBehaviour {
 
 		if (TestMoveOverride.HasValue) {
 			movement = TestMoveOverride.Value;
+		} else if (ClockMode.Active) {
+			// Clock mode: the frog plays by itself (ClockPilot.cs).
+			movement = AutoMove;
 		} else {
 			// Keyboard (changeable in Pause > Controls; arrow keys always work too).
 			movement = KeyBindings.KeyboardMove ();

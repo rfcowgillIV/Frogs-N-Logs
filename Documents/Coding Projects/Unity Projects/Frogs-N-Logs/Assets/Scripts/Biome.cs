@@ -129,7 +129,8 @@ public class Biome : MonoBehaviour
     {
         SetGround("Biomes/Ground_Lake", new Color(0.95f, 1f, 0.92f), 36f);
         RaiseWater(0.2f);   // ankle-deep: the frog wades rather than disappears
-        TintWater(new Color(0.42f, 0.82f, 0.88f, 0.55f), new Color(0.18f, 0.55f, 0.75f, 0.7f));
+        // Clear blue lake water (less see-through, so the grass under it doesn't turn it green).
+        TintWater(new Color(0.36f, 0.74f, 0.98f, 0.72f), new Color(0.10f, 0.40f, 0.86f, 0.88f));
         // Lily pads on the water: dry ground to hop across (and a few flowers).
         int placed = 0;
         for (int i = 0; i < 400 && placed < 46; i++)

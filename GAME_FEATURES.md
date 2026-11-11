@@ -99,3 +99,19 @@ bees; clumps of reeds to hide in (keep still and the bird and fox lose you for u
 the odd rainstorm (more flies, but a restless bird). Helpers are bigger, and on phones held
 upright the title screen stacks its boxes so everything is larger. New achievements: Lily
 hopper, Snow frog, Star frog, Long tongue; "Owl dodger" replaces Night survivor.
+
+## Round 6 (Nov 2026): clock mode and a clearer lake
+
+**Clock mode** (Clock button on the title screen) turns the game into a living clock for a spare screen:
+
+- The frog plays by itself: it hops after the nearest fly (and flicks its tongue at it), keeps away from the bird and other hunters, dodge-hops when something gets close, and wanders when there's nothing to chase. It can't lose; the bird just bounces off, dizzy.
+- The current time and date float over the pond in big text and update live. They drift very slowly around the screen so nothing burns into an OLED screen or TV.
+- The world follows the real time: Night after dark (9 pm–6 am), the Swamp at dusk (6–9 pm), and by day the season's level: Winter Freeze (Dec–Feb), Lily Pad Lake (Mar–May), the Pond (Jun–Aug), Autumn Woods (Sep–Nov). It checks every 30 seconds.
+- Tap or click for options: 12 or 24 hour, seconds, date, size (small, medium, large), sound (off by default), dim at night (11 pm–6 am), and "Open as clock" so the game starts straight into clock mode.
+- Any key or gamepad button (or Exit clock) goes back to the title screen.
+- Keeps the screen awake while showing, and goes full screen on the web.
+- Nothing counts: no flies for the wallet, no achievements, no levels unlocked, no best scores.
+
+**Lily Pad Lake** is now bright and clear: bluer, less see-through water, clear morning air instead of the pink mist, and a warmer sun.
+
+New play tests: T31 (clock mode end to end) and T32 (time of day and season).

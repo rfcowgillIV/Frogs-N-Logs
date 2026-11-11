@@ -204,6 +204,7 @@ public static class Achievements
     public static void Unlock(string id)
     {
         if (Has(id)) return;
+        if (ClockMode.Active) return; // the clock plays itself, so it earns nothing
         PlayerPrefs.SetInt("FNL.ach." + id, 1);
         PlayerPrefs.Save();
         foreach (string[] a in All)

@@ -55,6 +55,19 @@ public static class GameSettings
     public static bool MapHelper { get { return Flag("map.helper", true); } set { SetFlag("map.helper", value); } }
     public static bool HelperOn { get { return Flag("helperOn", true); } set { SetFlag("helperOn", value); } }
 
+    // ---- Nov 2026: clock mode (ClockMode.cs) ----
+    public static bool Clock24h { get { return Flag("clock.24h", false); } set { SetFlag("clock.24h", value); } }
+    public static bool ClockSeconds { get { return Flag("clock.seconds", false); } set { SetFlag("clock.seconds", value); } }
+    public static bool ClockDate { get { return Flag("clock.date", true); } set { SetFlag("clock.date", value); } }
+    public static bool ClockSound { get { return Flag("clock.sound", false); } set { SetFlag("clock.sound", value); } }
+    public static bool ClockDim { get { return Flag("clock.dim", true); } set { SetFlag("clock.dim", value); } }
+    public static bool ClockAtStart { get { return Flag("clock.atStart", false); } set { SetFlag("clock.atStart", value); } }
+    public static int ClockSize
+    {
+        get { return Mathf.Clamp(GetInt("clock.size", 1), 0, 2); }
+        set { SetInt("clock.size", Mathf.Clamp(value, 0, 2)); }
+    }
+
     public static bool Flag(string key, bool fallback) { return GetInt(key, fallback ? 1 : 0) == 1; }
     public static void SetFlag(string key, bool value) { SetInt(key, value ? 1 : 0); }
 

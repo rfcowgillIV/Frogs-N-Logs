@@ -145,7 +145,7 @@ public class GameDirector : MonoBehaviour
             int score = ScoreCounter.score;
             if (score > lastScore)
             {
-                Shop.Earn(score - lastScore);
+                if (!ClockMode.Active) Shop.Earn(score - lastScore);
                 lastScore = score;
                 if (score >= 1) Achievements.Unlock("first");
                 if (score >= 25) Achievements.Unlock("fiend");
@@ -153,7 +153,7 @@ public class GameDirector : MonoBehaviour
             }
             if (combo > 0 && Time.time - lastFlyTime > ComboWindow) combo = 0;
             LevelManager levels = LevelManager.Instance;
-            DailyChallenge.Check(ScoreCounter.score, roundTime, levels != null ? levels.Level : 1, HelperBuddy.ChasesThisRound);
+            if (!ClockMode.Active) DailyChallenge.Check(ScoreCounter.score, roundTime, levels != null ? levels.Level : 1, HelperBuddy.ChasesThisRound);
 
             UpdateMagnet();
             if (KeyBindings.LaserPressed()) FireLaser();
@@ -183,7 +183,7 @@ public class GameDirector : MonoBehaviour
         if (bonus <= 0) return;
         ScoreCounter.score += bonus;
         lastScore += bonus;
-        Shop.Earn(bonus);
+        if (!ClockMode.Active) Shop.Earn(bonus);
         FrogEffects.Say("Combo x" + combo + "! +" + bonus);
         AudioDirector.Play("PowerUp", 0.5f);
     }

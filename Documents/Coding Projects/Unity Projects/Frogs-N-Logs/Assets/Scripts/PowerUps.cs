@@ -70,7 +70,8 @@ public static class FrogEffects
     public static bool TryAbsorbHit(Collider attacker)
     {
         if (Time.time < InvulnerableUntil) return true;
-        if (Cheats.SuperFrog)
+        // Clock mode never ends: the attacker bounces off, dizzy, and the frog hops on.
+        if (Cheats.SuperFrog || ClockMode.Active)
         {
             // Super frog can't be caught: the attacker bounces off, dizzy.
             InvulnerableUntil = Time.time + 1f;
