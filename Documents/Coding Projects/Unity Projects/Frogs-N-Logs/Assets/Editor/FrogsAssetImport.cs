@@ -46,29 +46,32 @@ namespace FrogsNLogs.EditorTools
             }
         }
 
-        // Nov 2026: full-detail (up to 2048 px) art for the desktop apps, and a lighter 1024 px
-        // copy for the web and phones, so downloads stay quick and weaker devices stay smooth.
+        // Nov 2026: the sharpest art each device can hold.
+        //   Windows / Mac / Linux apps:  full detail (the ground is 4K)
+        //   iPhone / iPad / Android apps: up to 2K
+        //   Web:                          2K ground, 1K for everything else (a browser tab on a
+        //                                 phone has little memory, and too much crashes it)
         // Mipmaps let far-away ground use smaller copies automatically.
         void OnPreprocessTexture()
         {
             bool biome = In("Biomes");
             if (!In("Characters/Textures") && !In("Nature/Textures") && !In("Textures") && !biome) return;
             var tex = (TextureImporter)assetImporter;
-            tex.maxTextureSize = 2048;
+            tex.maxTextureSize = 4096;
             tex.mipmapEnabled = true;
             tex.alphaIsTransparency = tex.DoesSourceTextureHaveAlpha();
             if (biome)
             {
                 tex.wrapMode = TextureWrapMode.Repeat;
-                tex.anisoLevel = 4; // ground seen at an angle stays sharp
+                tex.anisoLevel = 8; // ground seen at an angle stays sharp
             }
             foreach (string platform in new[] { "WebGL", "Android", "iPhone" })
             {
                 TextureImporterPlatformSettings p = tex.GetPlatformTextureSettings(platform);
                 p.overridden = true;
-                p.maxTextureSize = 1024;
+                p.maxTextureSize = platform == "WebGL" && !biome ? 1024 : 2048;
                 p.format = TextureImporterFormat.Automatic;
-                p.compressionQuality = 60;
+                p.compressionQuality = 80;
                 tex.SetPlatformTextureSettings(p);
             }
         }

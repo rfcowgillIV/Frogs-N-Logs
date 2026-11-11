@@ -28,6 +28,7 @@ namespace FrogsNLogs.EditorTools
     {
         public const int MaxTextureSize = 1024;
         public const int MaxMaskTextureSize = 512;
+        public const int MaxGroundTextureSize = 2048;
 
         public static void ApplyForWeb()
         {
@@ -66,6 +67,8 @@ namespace FrogsNLogs.EditorTools
                                 || name.Contains("normal") || name.Contains("metal") || name.Contains("rough")
                                 || name.Contains("occlusion") || name.EndsWith("_ao") || name.Contains("mask");
                     int cap = mask ? MaxMaskTextureSize : MaxTextureSize;
+                    // The ground fills most of the screen, so it gets 2K on the web too.
+                    if (path.Replace('\\', '/').Contains("/Resources/Biomes/")) cap = MaxGroundTextureSize;
 
                     TextureImporterPlatformSettings web = importer.GetPlatformTextureSettings("WebGL");
                     int current = web.overridden ? web.maxTextureSize : importer.maxTextureSize;

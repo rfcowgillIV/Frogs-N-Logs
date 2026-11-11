@@ -1425,5 +1425,28 @@ namespace FrogsNLogs.Tests
             Assert.AreEqual(1, at(7, 12), "Summer days at the pond");
             Assert.AreEqual(5, at(10, 12), "Autumn days in the woods");
         }
+            [UnityTest, Timeout(60000)]
+        public IEnumerator T33_EveryLevelHasHighResGround()
+        {
+            yield return LoadLevel();
+            Terrain terrain = Terrain.activeTerrain;
+            Assert.IsNotNull(terrain, "The pond should have ground");
+            StringAssert.Contains("Ground_Pond", terrain.materialTemplate.name, "The Pond has its high-res grass");
+            Texture ground = terrain.materialTemplate.GetTexture("_BaseMap");
+            Assert.IsNotNull(ground, "The ground should have a texture");
+            Assert.GreaterOrEqual(ground.width, 2048, "The ground should be at least 2K (4K in the desktop apps)");
+            Debug.Log("[Playtest] Pond ground is " + ground.width + " px");
+
+            yield return StartGame();
+            KeepFrogSafe(60f);
+            object levels = GetStaticProp("LevelManager", "Instance");
+            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 2 });
+            yield return new WaitForSeconds(2f);
+            StringAssert.Contains("Ground_Swamp", terrain.materialTemplate.name, "The Swamp has mossy ground");
+            yield return Screenshot("27-hd-swamp");
+            levels.GetType().GetMethod("GoToLevel").Invoke(levels, new object[] { 3 });
+            yield return new WaitForSeconds(2f);
+            StringAssert.Contains("Ground_Pond", terrain.materialTemplate.name, "Night is the Pond by moonlight");
+        }
     }
 }

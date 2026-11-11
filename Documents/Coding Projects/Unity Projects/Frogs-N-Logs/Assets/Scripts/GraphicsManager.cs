@@ -160,7 +160,9 @@ public class GraphicsManager : MonoBehaviour
         {
             urp.renderScale = tier == GraphicsTier.Low ? 0.7f : tier == GraphicsTier.Medium ? 0.85f : 1f;
             urp.shadowDistance = tier == GraphicsTier.Low ? 0f : tier == GraphicsTier.Medium ? 35f : 60f;
-            urp.msaaSampleCount = tier == GraphicsTier.High ? 2 : 1;
+            // Smoother edges on High: 4x on computers, 2x on phones and the web.
+            bool lightDevice = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer;
+            urp.msaaSampleCount = tier == GraphicsTier.High ? (lightDevice ? 2 : 4) : 1;
             urp.supportsHDR = tier != GraphicsTier.Low;
         }
         QualitySettings.lodBias = tier == GraphicsTier.Low ? 0.5f : tier == GraphicsTier.Medium ? 1f : 1.5f;
