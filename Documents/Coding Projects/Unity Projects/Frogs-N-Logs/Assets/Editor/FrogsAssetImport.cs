@@ -15,6 +15,10 @@ namespace FrogsNLogs.EditorTools
 {
     public class FrogsAssetImport : AssetPostprocessor
     {
+        // Bump this whenever the rules below change, so Unity re-imports everything with them.
+        // 2: 4K ground in the desktop apps, 2K on phones and the web.
+        public override uint GetVersion() { return 2; }
+
         private bool In(string folder)
         {
             return assetPath.Replace('\\', '/').Contains("/Resources/" + folder + "/");
