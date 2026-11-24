@@ -59,15 +59,17 @@ jobs:
           url="https://hub.docker.com/v2/repositories/unityci/editor/tags?page_size=100&name=${UNITY_STREAM}"
           tags=$(curl -fsSL "$url" | jq -r '.results[].name')
           # The "webgl" image = the normal editor + web support, so one job can test AND build web.
-          version=$(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-webgl-3$" \
-                    | sed -E 's/^ubuntu-(.*)-webgl-3$/\1/' | sort -V | tail -1)
+          # GameCI image version 3 or 4 (they moved to 4 in Nov 2026); newest editor, then newest image.
+          best=$(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-webgl-[0-9]+$" \
+                    | sed -E 's/^ubuntu-(.*)-webgl-([0-9]+)$/\1 \2/' | sort -k1,1V -k2,2n | tail -1)
+          version=${best% *}; imagever=${best#* }
           if [ -z "$version" ]; then
             echo "::error::No unityci/editor image found for Unity ${UNITY_STREAM}"
             exit 1
           fi
           echo "Using Unity $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "image=unityci/editor:ubuntu-${version}-webgl-3" >> "$GITHUB_OUTPUT"
+          echo "image=unityci/editor:ubuntu-${version}-webgl-${imagever}" >> "$GITHUB_OUTPUT"
 
       - name: Pull Unity image
         run: docker pull "${{ steps.version.outputs.image }}"
