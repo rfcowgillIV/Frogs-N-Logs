@@ -21,7 +21,7 @@ title screen, and it rolls when you beat the Great Owl at the end of the Winter 
 
 | What | Asset | Source |
 |---|---|---|
-| Lily Pad Lake grass, Autumn leaves, Winter snow, ice | Grass004, ScatteredLeaves008, Snow010A, Ice002 | ambientCG (ambientcg.com) |
+| Pond grass, Swamp moss, Lily Pad Lake grass, Autumn leaves, Winter snow, ice (4K) | Grass005, Moss002, Grass004, ScatteredLeaves008, Snow010A, Ice002 | ambientCG (ambientcg.com) |
 
 CC0 doesn't require credit, but they deserve it.
 

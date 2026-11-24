@@ -11,7 +11,8 @@ using UnityEngine;
 //                      that cracks if you stand on it, falling snow, and the bird becomes a
 //                      snowy owl.
 //
-// Ground textures: ambientCG (CC0), 2048 px for the apps and 1024 px on the web and phones.
+// Ground textures: ambientCG (CC0), 4K in the desktop apps and 2K on phones and the web.
+// The Pond, the Swamp and Night get high-res ground too (Grass005 and Moss002).
 // Everything here is put back when the level reloads, so a new run starts at the Pond.
 public class Biome : MonoBehaviour
 {
@@ -71,6 +72,14 @@ public class Biome : MonoBehaviour
         }
         if (water.Count > 0) baseWaterLevel = water[0].bounds.max.y;
         WaterLevel = baseWaterLevel;
+        BaseGround(Current);
+    }
+
+    // The Pond, the Swamp and Night (the 2017 ground was a 512 px grass).
+    private void BaseGround(int level)
+    {
+        if (level == 2) SetGround("Biomes/Ground_Swamp", new Color(0.86f, 0.95f, 0.8f), 26f);
+        else SetGround("Biomes/Ground_Pond", new Color(0.96f, 1f, 0.92f), 30f);
     }
 
     void OnDestroy()
@@ -120,8 +129,10 @@ public class Biome : MonoBehaviour
             case 4: BuildLake(); break;
             case 5: BuildAutumn(); break;
             case 6: BuildWinter(); break;
-            default: SetGround(null, Color.white, 1f); break;
+            default: BaseGround(level); break;
         }
+        // Let go of the last world's ground (4K textures are big).
+        Resources.UnloadUnusedAssets();
         if (MiniMap.Instance != null) MiniMap.Instance.Refresh();
     }
 
@@ -202,7 +213,11 @@ public class Biome : MonoBehaviour
         }
         Texture2D tex = Resources.Load<Texture2D>(texture);
         if (tex == null) return;
-        Material m = new Material(Stylizer.Toon(tex, tint, 0f, false, 0.05f)) { name = "Ground " + texture, hideFlags = HideFlags.DontSave };
+        // (Built from the untextured cartoon material, so the shared material cache never holds
+        // on to a 4K ground after the level moves on.)
+        Material m = new Material(Stylizer.Toon(null, tint, 0f, false, 0.05f)) { name = "Ground " + texture, hideFlags = HideFlags.DontSave };
+        m.SetTexture("_BaseMap", tex);
+        if (terrain.materialTemplate != null && terrain.materialTemplate != originalTerrain) Destroy(terrain.materialTemplate);
         m.SetTextureScale("_BaseMap", new Vector2(tiling, tiling));
         m.SetFloat("_RimStrength", 0.05f);
         terrain.drawInstanced = false; // the cartoon shader draws the ground as one mesh
