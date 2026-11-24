@@ -72,7 +72,9 @@ jobs:
           # in Nov 2026, so accept either (newest image version first).
           unity=""; ver=""
           for v in $(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-base-[0-9]+$" | sed -E 's/^ubuntu-(.*)-base-[0-9]+$/\1/' | sort -V -r -u); do
-            for s in 5 4 3; do
+            # Every image version GameCI has published for this Unity, newest first (any number,
+            # so a future "-5" or "-6" is picked up without editing this file).
+            for s in $(echo "$tags" | grep -E "^ubuntu-${v//./\\.}-base-[0-9]+$" | sed -E 's/.*-base-([0-9]+)$/\1/' | sort -n -r -u); do
               ok=1
               for m in base android windows-mono mac-mono ios; do echo "$tags" | grep -qx "ubuntu-$v-$m-$s" || ok=0; done
               if [ $ok = 1 ]; then unity=$v; ver=$s; break 2; fi
