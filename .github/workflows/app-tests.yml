@@ -152,9 +152,18 @@ jobs:
           mkdir out
           cat > android-test.sh <<'SH'
           set -x
+          # A freshly started emulator spends its first minutes updating its own Google apps,
+          # and sometimes closes whatever app is open while it does (it closed 1.2.0 that way
+          # in a Nov 2026 check). So let it settle first, and give the game a second try.
+          sleep 90
           adb install -r Frogs-N-Logs-Android.apk
-          adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
-          sleep 60
+          for try in 1 2; do
+            adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
+            sleep 60
+            adb shell pidof "$APP_ID" && break
+            echo "Not running after try $try"
+            adb shell dumpsys activity exit-info "$APP_ID" | head -20 > out/android-exit-info-try$try.txt || true
+          done
           adb exec-out screencap -p > out/android-1-title.png
           adb shell input keyevent 62
           sleep 12

@@ -68,16 +68,22 @@ jobs:
           echo "platforms=${INPUT_PLATFORMS:-android windows mac linux ios}" >> "$GITHUB_OUTPUT"
           url="https://hub.docker.com/v2/repositories/unityci/editor/tags?page_size=100&name=${UNITY_STREAM}"
           tags=$(curl -fsSL "$url" | jq -r '.results[].name')
-          # Newest editor that has every image we need.
-          unity=""
-          for v in $(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-base-3$" | sed -E 's/^ubuntu-(.*)-base-3$/\1/' | sort -V -r); do
-            ok=1
-            for m in android windows-mono mac-mono ios; do echo "$tags" | grep -qx "ubuntu-$v-$m-3" || ok=0; done
-            if [ $ok = 1 ]; then unity=$v; break; fi
+          # Newest editor that has every image we need. GameCI moved from image version 3 to 4
+          # in Nov 2026, so accept either (newest image version first).
+          unity=""; ver=""
+          for v in $(echo "$tags" | grep -E "^ubuntu-${UNITY_STREAM//./\\.}\.[0-9]+f[0-9]+-base-[0-9]+$" | sed -E 's/^ubuntu-(.*)-base-[0-9]+$/\1/' | sort -V -r -u); do
+            # Every image version GameCI has published for this Unity, newest first (any number,
+            # so a future "-5" or "-6" is picked up without editing this file).
+            for s in $(echo "$tags" | grep -E "^ubuntu-${v//./\\.}-base-[0-9]+$" | sed -E 's/.*-base-([0-9]+)$/\1/' | sort -n -r -u); do
+              ok=1
+              for m in base android windows-mono mac-mono ios; do echo "$tags" | grep -qx "ubuntu-$v-$m-$s" || ok=0; done
+              if [ $ok = 1 ]; then unity=$v; ver=$s; break 2; fi
+            done
           done
           [ -n "$unity" ] || { echo "::error::No complete set of Unity images found"; exit 1; }
-          echo "Unity $unity, version $version"
+          echo "Unity $unity (GameCI images v$ver), version $version"
           echo "unity=$unity" >> "$GITHUB_OUTPUT"
+          echo "imagever=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Read serial from license file (if it has one)
         env:
@@ -102,6 +108,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY: ${{ steps.setup.outputs.unity }}
+          IMAGEVER: ${{ steps.setup.outputs.imagever }}
           PLATFORMS: ${{ steps.setup.outputs.platforms }}
         run: |
           chmod +x .github/scripts/unity-app-build.sh
@@ -116,9 +123,10 @@ jobs:
               linux)   image=base ;;
               *) echo "::warning::Unknown platform $p"; continue ;;
             esac
-            echo "::group::$p (unityci/editor:ubuntu-$UNITY-$image-3)"
-            docker pull -q "unityci/editor:ubuntu-$UNITY-$image-3"
-            if .github/scripts/unity-app-build.sh "unityci/editor:ubuntu-$UNITY-$image-3" "$p" "apps/$p"; then
+            img="unityci/editor:ubuntu-$UNITY-$image-$IMAGEVER"
+            echo "::group::$p ($img)"
+            docker pull -q "$img"
+            if .github/scripts/unity-app-build.sh "$img" "$p" "apps/$p"; then
               case $p in
                 android) cp apps/android/Frogs-N-Logs.apk release/Frogs-N-Logs-Android.apk ;;
                 windows) (cd apps/windows && rm -rf *_BurstDebugInformation_DoNotShip && zip -qr ../../release/Frogs-N-Logs-Windows.zip .) ;;
